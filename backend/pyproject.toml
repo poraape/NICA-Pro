@@ -9,13 +9,44 @@ dependencies = [
   "uvicorn[standard]>=0.29.0",
   "pydantic>=2.6.0",
   "sqlalchemy>=2.0.0",
-  "psycopg2-binary>=2.9.0"
+  "psycopg2-binary>=2.9.0",
+  "alembic>=1.13.0",
+  "PyJWT>=2.8.0",
+  "opentelemetry-api>=1.24.0",
+  "opentelemetry-sdk>=1.24.0"
 ]
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0"]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.6",
+  "anyio>=4.3.0",
+  "ruff>=0.4.4",
+  "black>=24.4.2",
+  "mypy>=1.10.0",
+]
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-select = ["B", "I", "N", "W", "C4"]
+ignore = ["B008"]
+
+[tool.ruff.isort]
+known-first-party = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
