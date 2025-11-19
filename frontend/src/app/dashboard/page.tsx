@@ -1,38 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import {
-  fetchDashboard,
-  syncDiary,
-  upsertPlan,
-  type DashboardResponse,
-  type NutritionPlanResponse,
-  type ProfilePayload
-} from "@/lib/api";
+import Link from "next/link";
+import { useAppState } from "@/lib/store";
+import type { ProfilePayload } from "@/lib/api";
 import { RadialRing } from "@/components/dashboard/radial-ring";
 import { ChartRenderer } from "@/components/dashboard/chart-renderer";
 import { InsightCard } from "@/components/dashboard/insight-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const defaultProfile: ProfilePayload = {
-  name: "NICA Athlete",
-  age: 32,
-  weight_kg: 72,
-  height_cm: 176,
-  sex: "female",
-  activity_level: "moderate",
-  goal: "maintain"
-};
-
-const sampleDiary = [
-  "iogurte grego-200g",
-  "overnight oats-150g",
-  "salmao selado-180g",
-  "agua de coco-300ml"
-];
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
 
 const statusColors: Record<string, string> = {
   above: "#ff375f",
@@ -40,32 +22,48 @@ const statusColors: Record<string, string> = {
   below: "#ffd60a"
 };
 
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-40 rounded-3xl border border-white/30 bg-white/60 shadow-inner shadow-white/20 backdrop-blur dark:border-white/10 dark:bg-slate-900/40"
+          />
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="h-72 rounded-3xl border border-white/20 bg-white/70 backdrop-blur dark:bg-slate-900/60 lg:col-span-2" />
+        <div className="h-72 rounded-3xl border border-white/20 bg-white/70 backdrop-blur dark:bg-slate-900/60" />
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const [plan, setPlan] = useState<NutritionPlanResponse["plan"] | null>(null);
-  const [dashboard, setDashboard] = useState<DashboardResponse["dashboard"] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const {
+    profile,
+    diary,
+    dashboard,
+    loading,
+    syncing,
+    updateProfile,
+    updateDiaryDraft,
+    addDiaryEntry,
+    removeDiaryEntry,
+    refreshDashboard,
+    syncDiary,
+    pushToast
+  } = useAppState();
 
   useEffect(() => {
-    const bootstrap = async () => {
-      try {
-        const planResponse = await upsertPlan(defaultProfile);
-        setPlan(planResponse.plan);
-        const dashboardResponse = await fetchDashboard(defaultProfile.name);
-        setDashboard(dashboardResponse.dashboard);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Falha ao carregar dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-    bootstrap();
-  }, []);
+    if (profile.name && !dashboard && !loading) {
+      void refreshDashboard();
+    }
+  }, [profile.name, dashboard, loading, refreshDashboard]);
 
-  const caloricProfile = plan?.caloric_profile;
+  const caloricProfile = dashboard?.caloric_profile ?? null;
   const ringData = useMemo(() => {
     if (!dashboard?.today) return [];
     const metrics = [...dashboard.today.metrics, dashboard.today.hydration];
@@ -97,29 +95,19 @@ export default function DashboardPage() {
 
   const coachMessages = dashboard?.coach_messages ?? [];
 
-  const handleDiarySync = async () => {
-    try {
-      setSyncing(true);
-      setSuccess(null);
-      await upsertPlan(defaultProfile);
-      await syncDiary({ user: defaultProfile.name, entries: sampleDiary });
-      const refreshed = await fetchDashboard(defaultProfile.name);
-      setDashboard(refreshed.dashboard);
-      setSuccess("Diário sincronizado com sucesso");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao sincronizar diário");
-    } finally {
-      setSyncing(false);
+  const handleProfileSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!profile.name) {
+      pushToast({ title: "Informe um identificador", description: "Escolha um nome para salvar e sincronizar seus dados.", tone: "warning" });
+      return;
     }
+    await refreshDashboard();
   };
 
-  if (loading) {
-    return (
-      <section className="py-24 text-center text-slate-500">
-        <p className="text-sm uppercase tracking-[0.4em]">Carregando orchestrator…</p>
-      </section>
-    );
-  }
+  const handleAddDiary = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    addDiaryEntry(diary.draftText);
+  };
 
   return (
     <motion.section
@@ -133,345 +121,349 @@ export default function DashboardPage() {
           <p className="text-xs uppercase tracking-[0.4em] text-slate-500 dark:text-slate-300">NICA Multi-Agent</p>
           <h1 className="text-4xl font-semibold text-slate-900 dark:text-white">Coach Dashboard</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-200">
-            Planner → Diário → Calc → Trend → Coach → UI. Um circuito automatizado com validação clínica
-            e glass-morphism inspirado no iOS 17.
+            Planner → Diário → Calc → Trend → Coach → UI. Um circuito automatizado com validação clínica,
+            anéis responsivos e microinterações inspiradas no iOS.
           </p>
         </div>
         <div className="flex flex-col gap-2 md:items-end">
-          <Button onClick={handleDiarySync} disabled={syncing} className="gap-2 rounded-full px-6 py-5">
-            <span aria-hidden>􀅈</span>
-            {syncing ? "Sincronizando..." : "Registrar diário inteligente"}
+          <Button
+            onClick={() => refreshDashboard()}
+            disabled={loading || !profile.name}
+            className="gap-2 rounded-full px-6 py-5 shadow-lg shadow-brand/30 transition hover:-translate-y-0.5"
+          >
+            <span aria-hidden>􀣺</span>
+            {loading ? "Sincronizando..." : "Atualizar pipeline"}
           </Button>
-          {success && <p className="text-xs text-emerald-500">{success}</p>}
+          {profile.name && (
+            <p className="text-xs text-slate-500 dark:text-slate-300">Sessão ativa para {profile.name}</p>
+          )}
         </div>
       </header>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {ringData.map((ring) => (
-          <RadialRing key={ring.label} {...ring} />
-        ))}
-      </div>
-
-      {dashboard?.today && (
-        <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="border border-white/30 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-white/10 dark:bg-slate-900/60 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Hoje</CardTitle>
-            <CardDescription>Anéis de progresso, micronutrientes-chave e insights táticos.</CardDescription>
+            <CardTitle>Perfil clínico</CardTitle>
+            <CardDescription>Substitui os mocks: salvamos seu perfil e recalibramos o plano.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Micronutrientes-chave</p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-200">
-                {micronutrients.map((item) => (
-                  <li key={item} className="rounded-2xl border border-white/20 bg-white/80 px-3 py-2 shadow-inner dark:bg-white/10">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Insights imediatos</p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-200">
-                {todayInsights.map((item) => (
-                  <li key={item} className="rounded-2xl border border-white/10 bg-white/70 px-3 py-2 shadow dark:bg-white/10">
-                    • {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {weekData.length > 0 && (
-          <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Semana</CardTitle>
-              <CardDescription>Barras diárias + tendência calórica conectada ao Trend-Agent.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={weekData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="4 4" opacity={0.3} />
-                    <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8" }} />
-                    <Tooltip formatter={(value: number) => `${value.toFixed(0)} kcal`} />
-                    <Bar dataKey="calories" radius={[12, 12, 12, 12]}>
-                      {weekData.map((entry, index) => (
-                        <Cell key={`${entry.day}-${index}`} fill={statusColors[entry.status]} />
-                      ))}
-                    </Bar>
-                    <Line type="monotone" dataKey="trend" stroke="#6366f1" strokeWidth={2} dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="mt-4 space-y-1 text-sm text-slate-600 dark:text-slate-200">
-                {weekHighlights.map((highlight) => (
-                  <li key={highlight}>• {highlight}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-        {navigationCards.length > 0 && (
-          <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-            <CardHeader>
-              <CardTitle>Navegação por nutriente</CardTitle>
-              <CardDescription>Cards clicáveis levam às áreas dedicadas.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {navigationCards.map((link) => (
-                <div
-                  key={link.label}
-                  className="flex items-center gap-3 rounded-2xl border border-white/30 bg-white/70 p-3 text-sm text-slate-700 shadow-inner dark:bg-white/10 dark:text-slate-100"
-                >
-                  <span className="text-2xl text-slate-500 dark:text-slate-100">{link.icon}</span>
-                  <div>
-                    <p className="font-semibold">{link.label}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-300">{link.description}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {mealInsights.length > 0 && (
-        <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-          <CardHeader>
-            <CardTitle>Inspeção por refeição</CardTitle>
-            <CardDescription>Impacto de cada refeição no dia e microajustes sugeridos.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            {mealInsights.map((meal) => (
-              <div key={`${meal.name}-${meal.time}`} className="rounded-3xl border border-white/20 bg-white/70 p-4 text-sm text-slate-700 shadow-inner dark:bg-white/10 dark:text-slate-100">
-                <p className="text-base font-semibold text-slate-900 dark:text-white">{meal.name} — {meal.time}</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
-                  {Math.round(meal.calories)} kcal · P {Math.round(meal.protein_g)} g · C {Math.round(meal.carbs_g)} g · G {Math.round(meal.fats_g)} g
-                </p>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">{meal.impact}</p>
-                <p className="mt-1 text-xs italic text-slate-600 dark:text-slate-200">{meal.adjustment}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-        <CardHeader className="gap-1">
-          <CardTitle>Plano alimentar semanal</CardTitle>
-          <CardDescription>
-            {plan ? `${plan.days.length} dias ativos com foco ${plan.macro_targets.calories.toFixed(0)} kcal/dia.` : "Preparando plano"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
-            {plan?.disclaimers.map((notice, index) => (
-              <p key={`${notice}-${index}`} className="rounded-2xl border border-amber-200/60 bg-amber-50/80 p-3 text-xs text-amber-700 dark:border-amber-300/40 dark:bg-amber-400/10 dark:text-amber-100">
-                {notice}
-              </p>
-            ))}
-            {caloricProfile && (
-              <div className="rounded-3xl border border-white/20 bg-white/60 p-4 text-sm text-slate-700 shadow-inner dark:bg-white/5 dark:text-slate-100">
-                <p className="font-semibold">Metas energéticas</p>
-                <ul className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-300">
-                  <li>TMB: {caloricProfile.tmb.toFixed(0)} kcal</li>
-                  <li>GET: {caloricProfile.get.toFixed(0)} kcal</li>
-                  <li>Ajuste clínico: {caloricProfile.adjustment_kcal.toFixed(0)} kcal</li>
-                  <li>Meta final: {caloricProfile.target_calories.toFixed(0)} kcal</li>
-                </ul>
-              </div>
-            )}
-            <p className="text-sm text-slate-600 dark:text-slate-200">
-              Macro-alvos: {plan?.macro_targets.protein_g ?? 0} g proteína · {plan?.macro_targets.carbs_g ?? 0} g carbo · {plan?.macro_targets.fats_g ?? 0} g gorduras.
-            </p>
-            <div className="rounded-3xl border border-white/20 bg-white/60 p-4 text-sm text-slate-700 shadow-inner dark:bg-white/5 dark:text-slate-100">
-              <p className="font-semibold">Meal prep da semana</p>
-              <ul className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-200">
-                {plan?.meal_prep.slice(0, 4).map((tip) => (
-                  <li key={tip}>{tip}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {plan?.hydration.reminders?.map((tip) => (
-              <div
-                key={tip}
-                className="rounded-3xl border border-white/30 bg-gradient-to-br from-blue-500/30 to-cyan-400/30 p-4 text-sm text-white shadow-lg"
-              >
-                <p className="text-xs uppercase tracking-[0.4em]">H2O</p>
-                <p className="text-base font-semibold">{tip}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-
-      {plan && (
-        <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-          <CardHeader>
-            <CardTitle>Resumo dos primeiros dias</CardTitle>
-            <CardDescription>Plano completo inclui 7 dias com 5 refeições cada.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2">
-            {plan.days.slice(0, 2).map((day) => (
-              <div key={day.day} className="rounded-3xl border border-white/30 bg-white/60 p-4 text-sm text-slate-700 shadow-inner dark:bg-white/5 dark:text-slate-100">
-                <p className="text-base font-semibold">{day.day} · {Math.round(day.summary.calories)} kcal</p>
-                <p className="text-xs text-slate-500 dark:text-slate-300">
-                  P {Math.round(day.summary.protein_g)}g · C {Math.round(day.summary.carbs_g)}g · G {Math.round(day.summary.fats_g)}g · Hidratação alvo {Math.round(day.hydration_ml / 1000)}L
-                </p>
-                <ul className="mt-3 space-y-3">
-                  {day.meals.map((meal) => (
-                    <li
-                      key={`${day.day}-${meal.label}-${meal.time}`}
-                      className="rounded-2xl border border-white/40 bg-white/70 p-3 text-xs text-slate-600 shadow dark:bg-white/5 dark:text-slate-200"
-                    >
-                      <p className="font-semibold text-slate-800 dark:text-white">{meal.label} — {meal.time}</p>
-                      <p className="mt-1 text-[11px]">{meal.items.join(" • ")}</p>
-                      <p className="mt-1 text-[11px]">
-                        Calorias {Math.round(meal.calories)} kcal | P {Math.round(meal.protein_g)}g | C {Math.round(meal.carbs_g)}g | G {Math.round(meal.fats_g)}g
-                      </p>
-                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-300">Micros: {meal.micros.join(", ")}</p>
-                      <p className="mt-1 text-[11px] italic text-slate-500 dark:text-slate-400">{meal.justification}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60 lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Visualizações multi-agente</CardTitle>
-            <CardDescription>Radar, pizza, barras e timeline atualizados em tempo real.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 lg:grid-cols-2">
-            {charts.map((chart) => (
-              <div key={`${chart.type}-${chart.title}`} className="rounded-3xl border border-white/20 bg-white/40 p-4 dark:bg-white/5">
-                <p className="text-sm font-medium text-slate-700 dark:text-white">{chart.title}</p>
-                <ChartRenderer chart={chart} />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <div className="space-y-6">
-          <Card className="border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-            <CardHeader>
-              <CardTitle>Coach-Agent</CardTitle>
-              <CardDescription>Mensagens adaptativas e validação clínica.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {coachMessages.map((message, index) => (
-                <InsightCard
-                  key={message.title + index}
-                  title={message.title}
-                  body={message.body}
-                  severity={message.severity}
-                  index={index}
+          <CardContent>
+            <form onSubmit={handleProfileSubmit} className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Identificador</Label>
+                <Input
+                  id="name"
+                  value={profile.name}
+                  onChange={(e) => updateProfile({ name: e.target.value })}
+                  placeholder="Ex: atleta-julia"
+                  required
                 />
-              ))}
-            </CardContent>
-          </Card>
-          {alerts.length > 0 && (
-            <Card className="border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
+                <p className="text-xs text-slate-500">Use rótulos distintos para sessões diferentes.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sex">Sexo</Label>
+                <Select id="sex" value={profile.sex} onChange={(e) => updateProfile({ sex: e.target.value as ProfilePayload["sex"] })}>
+                  <option value="female">Feminino</option>
+                  <option value="male">Masculino</option>
+                  <option value="other">Outro</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Idade</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  min={12}
+                  max={90}
+                  value={profile.age}
+                  onChange={(e) => updateProfile({ age: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height">Altura (cm)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  min={120}
+                  max={230}
+                  value={profile.height_cm}
+                  onChange={(e) => updateProfile({ height_cm: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Peso (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  min={35}
+                  max={250}
+                  value={profile.weight_kg}
+                  onChange={(e) => updateProfile({ weight_kg: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activity_level">Atividade</Label>
+                <Select
+                  id="activity_level"
+                  value={profile.activity_level}
+                  onChange={(e) => updateProfile({ activity_level: e.target.value as ProfilePayload["activity_level"] })}
+                >
+                  <option value="sedentary">Sedentário</option>
+                  <option value="light">Leve</option>
+                  <option value="moderate">Moderado</option>
+                  <option value="intense">Intenso</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="goal">Objetivo</Label>
+                <Select id="goal" value={profile.goal} onChange={(e) => updateProfile({ goal: e.target.value as ProfilePayload["goal"] })}>
+                  <option value="cut">Secar</option>
+                  <option value="maintain">Manter</option>
+                  <option value="bulk">Hipertrofia</option>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button type="submit" disabled={loading || !profile.name} className="w-full rounded-2xl py-3">
+                  {loading ? "Recalculando..." : "Salvar e recalibrar"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-white/30 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-white/10 dark:bg-slate-900/60">
+          <CardHeader>
+            <CardTitle>Diário inteligente</CardTitle>
+            <CardDescription>Persistência real com múltiplas entradas e rascunho salvo.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleAddDiary} className="space-y-3">
+              <Label htmlFor="diary-entry">Adicionar entrada</Label>
+              <Textarea
+                id="diary-entry"
+                value={diary.draftText}
+                onChange={(e) => updateDiaryDraft(e.target.value)}
+                placeholder="iogurte grego 200g"
+                className="min-h-[72px] rounded-2xl border border-white/40 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-slate-900/50"
+              />
+              <Button type="submit" variant="secondary" className="w-full rounded-2xl py-2" disabled={!diary.draftText.trim()}>
+                Registrar na fila
+              </Button>
+            </form>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Entradas prontas ({diary.entries.length})</p>
+              <ul className="space-y-2 text-sm">
+                {diary.entries.map((entry, index) => (
+                  <li
+                    key={entry + index}
+                    className="flex items-center justify-between rounded-2xl border border-white/30 bg-white/80 px-3 py-2 text-slate-700 shadow-inner backdrop-blur dark:border-white/10 dark:bg-slate-900/40 dark:text-white"
+                  >
+                    <span>{entry}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeDiaryEntry(index)}
+                      className="rounded-full px-2 py-1 text-xs text-rose-500 transition hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 dark:hover:bg-rose-500/10"
+                      aria-label="Remover entrada"
+                    >
+                      􀈑
+                    </button>
+                  </li>
+                ))}
+                {diary.entries.length === 0 && <li className="text-xs text-slate-500">Nenhuma entrada ainda.</li>}
+              </ul>
+            </div>
+            <Button
+              onClick={() => syncDiary()}
+              disabled={syncing || !diary.entries.length}
+              className="w-full rounded-2xl py-3 shadow-md shadow-brand/20"
+            >
+              {syncing ? "Enviando..." : "Sincronizar diário"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {loading && <DashboardSkeleton />}
+
+      {!loading && dashboard && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {ringData.map((ring) => (
+              <RadialRing key={ring.label} {...ring} />
+            ))}
+          </div>
+
+          {dashboard.today && (
+            <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
               <CardHeader>
-                <CardTitle>Alertas inteligentes</CardTitle>
-                <CardDescription>Proteína, fibras, sódio, hidratação e padrões comportamentais.</CardDescription>
+                <CardTitle>Hoje</CardTitle>
+                <CardDescription>Anéis de progresso, micronutrientes-chave e insights táticos.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Micronutrientes-chave</p>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-200">
+                    {micronutrients.map((item) => (
+                      <li
+                        key={item}
+                        className="rounded-2xl border border-white/20 bg-white/80 px-3 py-2 shadow-inner backdrop-blur dark:bg-white/10"
+                      >
+                        <Link href={`/dashboard/history?nutriente=${encodeURIComponent(item)}`} className="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                          {item}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Insights imediatos</p>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-200">
+                    {todayInsights.map((item) => (
+                      <li key={item} className="rounded-2xl border border-white/10 bg-white/70 px-3 py-2 shadow dark:bg-white/10">
+                        • {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {weekData.length > 0 && (
+              <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60 lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Semana</CardTitle>
+                  <CardDescription>Barras diárias + tendência calórica conectada ao Trend-Agent.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={weekData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                        <CartesianGrid strokeDasharray="4 4" opacity={0.3} />
+                        <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8" }} />
+                        <Tooltip cursor={{ opacity: 0.1 }} />
+                        <Bar dataKey="calories" barSize={24} radius={[10, 10, 10, 10]}>
+                          {weekData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={statusColors[entry.status]} />
+                          ))}
+                        </Bar>
+                        <Line type="monotone" dataKey="trend" stroke="#0a84ff" strokeWidth={3} dot={false} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
+              <CardHeader>
+                <CardTitle>Planos e status</CardTitle>
+                <CardDescription>Resumo clínico da versão mais recente.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {alerts.map((alert, index) => (
+                {caloricProfile && (
                   <InsightCard
-                    key={`${alert.title}-${index}`}
-                    title={alert.title}
-                    body={alert.detail}
-                    severity={alert.severity}
-                    index={index}
+                    title="Gasto energético"
+                    subtitle={`${Math.round(caloricProfile.get)} kcal • TMB ${Math.round(caloricProfile.tmb)} kcal`}
+                    status="ativo"
+                    trend="􀊄"
+                  />
+                )}
+                {weekHighlights.map((item) => (
+                  <InsightCard key={item} title={item} subtitle="Trend-Agent" status="alerta" trend="􀜟" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
+              <CardHeader>
+                <CardTitle>Inspeção das refeições</CardTitle>
+                <CardDescription>Deep-link para detalhes por refeição.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {mealInsights.map((meal) => (
+                  <InsightCard
+                    key={meal.name}
+                    title={`${meal.name} • ${meal.calories} kcal`}
+                    subtitle={`${meal.adjustment} (${meal.impact})`}
+                    status="coaching"
+                    trend={meal.time}
                   />
                 ))}
               </CardContent>
             </Card>
+
+            <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
+              <CardHeader>
+                <CardTitle>Alertas clínicos</CardTitle>
+                <CardDescription>Explore detalhes com links dedicados.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {alerts.map((alert, index) => (
+                  <Link key={alert.title} href={`/dashboard/alerts/${index}`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                    <InsightCard
+                      title={alert.title}
+                      subtitle={alert.detail}
+                      status={alert.severity}
+                      trend="􀒳"
+                    />
+                  </Link>
+                ))}
+                {alerts.length === 0 && <p className="text-sm text-slate-500">Sem alertas críticos agora.</p>}
+              </CardContent>
+            </Card>
+          </div>
+
+          {charts.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Navegação e gráficos</h2>
+                <p className="text-xs text-slate-500">Profundidade por agente com links reais.</p>
+              </div>
+              <ChartRenderer charts={charts} />
+              <div className="grid gap-3 md:grid-cols-2">
+                {navigationCards.map((item) => (
+                  <Link key={item.href} href={item.href} className="rounded-2xl border border-white/20 bg-white/70 px-4 py-3 text-sm shadow backdrop-blur transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:bg-slate-900/60">
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-100">
+                      <span aria-hidden>{item.icon}</span>
+                      <div>
+                        <p className="font-semibold">{item.label}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-300">{item.description}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
-        </div>
-      </div>
 
-
-      {plan && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-            <CardHeader>
-              <CardTitle>Lista de compras inteligente</CardTitle>
-              <CardDescription>Organizada por categorias para facilitar a execução do meal prep.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-700 dark:text-slate-100">
-              {plan.shopping_list.map((category) => (
-                <div key={category.name} className="rounded-2xl border border-white/30 bg-white/60 p-3 shadow-inner dark:bg-white/5">
-                  <p className="font-semibold">{category.name}</p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{category.items.join(", ")}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
-            <CardHeader>
-              <CardTitle>Substituições, refeição livre e aderência</CardTitle>
-              <CardDescription>Flexibilidade com segurança clínica.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-700 dark:text-slate-100">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-slate-500 dark:text-slate-300">
-                    <tr>
-                      <th className="py-1 text-left">Alimento</th>
-                      <th className="py-1 text-left">Sub 1</th>
-                      <th className="py-1 text-left">Sub 2</th>
-                      <th className="py-1 text-left">Equivalência</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {plan.substitutions.map((sub) => (
-                      <tr key={sub.item} className="border-t border-white/10">
-                        <td className="py-1 pr-2 align-top">{sub.item}</td>
-                        <td className="py-1 pr-2 align-top">{sub.substitution_1}</td>
-                        <td className="py-1 pr-2 align-top">{sub.substitution_2}</td>
-                        <td className="py-1 align-top">{sub.equivalence}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {coachMessages.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-xl font-semibold">Mensagens do Coach</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {coachMessages.map((message) => (
+                  <Card
+                    key={message.title}
+                    className="border border-white/20 bg-white/70 shadow-lg backdrop-blur transition hover:-translate-y-0.5 dark:bg-slate-900/60"
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <span aria-hidden>{message.severity === "critical" ? "􀇿" : "􀎸"}</span>
+                        {message.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm text-slate-600 dark:text-slate-200">{message.body}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))}
               </div>
-              <div className="rounded-2xl border border-white/30 bg-white/60 p-3 text-xs text-slate-600 shadow-inner dark:bg-white/5 dark:text-slate-200">
-                <p className="font-semibold">Refeição livre</p>
-                <p className="mt-1">{plan.free_meal}</p>
-              </div>
-              <div className="rounded-2xl border border-white/30 bg-white/60 p-3 text-xs text-slate-600 shadow-inner dark:bg-white/5 dark:text-slate-200">
-                <p className="font-semibold">Dicas de aderência</p>
-                <ul className="mt-1 space-y-1">
-                  {plan.adherence_tips.map((tip) => (
-                    <li key={tip}>• {tip}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-white/30 bg-white/60 p-3 text-xs text-slate-600 shadow-inner dark:bg-white/5 dark:text-slate-200">
-                <p className="font-semibold">Perguntas para refinar</p>
-                <ul className="mt-1 space-y-1">
-                  {plan.follow_up_questions.map((question) => (
-                    <li key={question}>• {question}</li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </section>
+          )}
+        </>
       )}
     </motion.section>
   );

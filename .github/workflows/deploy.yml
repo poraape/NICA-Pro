@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+jobs:
+  migrate_seed_health:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install ./backend
+      - name: Select environment variables
+        id: env
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "db=${{ secrets.PROD_DATABASE_URL }}" >> $GITHUB_OUTPUT
+            echo "health=${{ secrets.PROD_HEALTHCHECK_URL }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.environment }}" = "stage" ]; then
+            echo "db=${{ secrets.STAGE_DATABASE_URL }}" >> $GITHUB_OUTPUT
+            echo "health=${{ secrets.STAGE_HEALTHCHECK_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "db=${{ secrets.DEV_DATABASE_URL }}" >> $GITHUB_OUTPUT
+            echo "health=${{ secrets.DEV_HEALTHCHECK_URL }}" >> $GITHUB_OUTPUT
+          fi
+      - name: Run migrations and seeds
+        env:
+          DATABASE_URL: ${{ steps.env.outputs.db }}
+        working-directory: backend
+        run: |
+          python -m src.database.cli migrate-seed --url "$DATABASE_URL"
+      - name: Health and readiness check
+        env:
+          DATABASE_URL: ${{ steps.env.outputs.db }}
+          HEALTHCHECK_URL: ${{ steps.env.outputs.health }}
+        working-directory: backend
+        run: |
+          python -m src.database.cli healthcheck --url "$DATABASE_URL"
+          if [ -n "$HEALTHCHECK_URL" ]; then
+            curl -f "$HEALTHCHECK_URL"
+          fi
