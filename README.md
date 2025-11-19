@@ -62,7 +62,9 @@ Listadas em `backend/pyproject.toml`, incluem FastAPI, SQLAlchemy, Pydantic e `p
 - Supabase CLI (opcional, caso queira rodar o Postgres localmente)
 
 ### Passo a passo
-1. **Configurar o backend**
+1. **Inicialização integrada (recomendado)**
+   - Rode `./start-dev.sh` na raiz: ele sobe Postgres dockerizado (ou Supabase/SQLite, conforme flags), aplica migrações + seeds e inicia backend (8000) e frontend (3000) com healthchecks e logs em `.devlogs/`. Leia `docs/start-dev.md` para ver todas as variáveis e modos (`USE_SUPABASE`, `USE_SQLITE`, `BACKEND_PORT`, `FRONTEND_PORT`, etc.).
+2. **Configuração manual** (caso prefira controlar cada serviço)
    ```bash
    cd backend
    python -m venv .venv && source .venv/bin/activate
@@ -71,7 +73,6 @@ Listadas em `backend/pyproject.toml`, incluem FastAPI, SQLAlchemy, Pydantic e `p
    uvicorn app.main:app --reload --port 8000
    ```
    - Crie um usuário via `POST /api/users` e use o `id` retornado no header `X-User-Id` para chamadas subsequentes.
-2. **Configurar o frontend**
    ```bash
    cd frontend
    npm install
