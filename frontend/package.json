@@ -23,5 +23,8 @@
     "typescript": "5.4.5",
     "@types/react": "18.2.21",
     "@types/node": "20.11.30"
+  },
+  "optionalDependencies": {
+    "framer-motion": "11.0.8"
   }
 }
