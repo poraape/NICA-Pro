@@ -41,12 +41,8 @@ nica-pro/
 
 ### Passo a passo
 1. **Inicialização integrada (recomendado)**
-   - Execute `./start-dev.sh` na raiz. O script:
-     - escolhe o banco (Postgres dockerizado, Supabase ou SQLite) conforme flags;
-     - aplica migrações Alembic e seeds de limites clínicos;
-     - sobe backend (porta padrão 8000) e frontend (3000) com healthchecks e logs em `.devlogs/`;
-     - oferece teardown seguro. Veja `docs/start-dev.md` para variáveis como `USE_SUPABASE`, `USE_SQLITE`, `BACKEND_PORT`, `FRONTEND_PORT`, `DATABASE_URL`.
-2. **Configuração manual**
+   - Rode `./start-dev.sh` na raiz: ele sobe Postgres dockerizado (ou Supabase/SQLite, conforme flags), aplica migrações + seeds e inicia backend (8000) e frontend (3000) com healthchecks e logs em `.devlogs/`. Leia `docs/start-dev.md` para ver todas as variáveis e modos (`USE_SUPABASE`, `USE_SQLITE`, `BACKEND_PORT`, `FRONTEND_PORT`, etc.).
+2. **Configuração manual** (caso prefira controlar cada serviço)
    ```bash
    cd backend
    python -m venv .venv && source .venv/bin/activate
