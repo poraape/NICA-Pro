@@ -182,3 +182,45 @@ export function syncDiary(payload: DiaryPayload) {
 export function fetchDashboard(user: string) {
   return fetch(`${API_BASE}/api/v1/dashboard/${user}`).then((res) => handleResponse<DashboardResponse>(res));
 }
+
+export interface CreateUserPayload {
+  email: string;
+  full_name: string;
+  metadata?: Record<string, unknown>;
+}
+
+export function createUser(payload: CreateUserPayload) {
+  return fetch(`${API_BASE}/api/v1/users`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(payload)
+  }).then((res) => handleResponse<{ id: string }>(res));
+}
+
+export interface UpsertGoalsPayload {
+  calories_target: number;
+  protein_target: number;
+  effective_from: string;
+}
+
+export function upsertGoals(payload: UpsertGoalsPayload) {
+  return fetch(`${API_BASE}/api/v1/goals`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(payload)
+  }).then((res) => handleResponse<{ ok: boolean }>(res));
+}
+
+export interface CreateMealPayload {
+  meal_time: string;
+  text: string;
+  meal_type: string;
+}
+
+export function createMeal(payload: CreateMealPayload) {
+  return fetch(`${API_BASE}/api/v1/meals`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(payload)
+  }).then((res) => handleResponse<{ id: string }>(res));
+}
