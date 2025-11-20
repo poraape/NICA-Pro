@@ -33,3 +33,8 @@ Este guia descreve como automatizar deploys e operar os ambientes **dev/stage/pr
 - Releases são tagueadas somente após CI e auditorias verdes. Use o template de PR para checklist de segurança/UX.
 - Deploys em `prod` devem ser aprovados por 2 revisores e executar o workflow de deploy apontando para os secrets de produção.
 - Após deploy, validar healthcheck, dashboards de métricas e ausência de DLQ antes de encerrar a janela.
+
+## Imagens containerizadas e Hugging Face
+- O `Dockerfile` na raiz gera a imagem oficial do backend com build multi-stage, usuário sem privilégios e cache de modelos em `/var/huggingface`. Use `PYTHON_VERSION` como argumento para padronizar a base.
+- Para ambientes que exigem download prévio de modelos, defina `HF_MODEL_REPOS` e `HF_REVISION` e monte o token via secret (`/run/secrets/huggingface_token`). O script `infra/docker/prefetch_models.py` garante que os snapshots sejam baixados antes do start.
+- O `docker-compose.deploy.yml` em `infra/docker/` sobe Postgres, backend e volume dedicado `hf-cache`; injete variáveis com `stack.env` (não versionado em produção) e mantenha `huggingface_token.txt` fora do controle de versão.
