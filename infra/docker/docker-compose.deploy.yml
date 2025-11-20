@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: "3.11"
+    env_file:
+      - ./stack.env
+    environment:
+      RUN_DB_MIGRATIONS: "1"
+      HF_MODEL_REPOS: ${HF_MODEL_REPOS:-}
+      HF_REVISION: ${HF_REVISION:-main}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    secrets:
+      - huggingface_token
+    volumes:
+      - hf-cache:/var/huggingface
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nica}
+      POSTGRES_USER: ${POSTGRES_USER:-nica}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nica}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  hf-cache:
+
+secrets:
+  huggingface_token:
+    file: ./huggingface_token.txt

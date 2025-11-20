@@ -64,9 +64,10 @@ nica-pro/
 - **Frontend**: `npm run lint` garante conformidade com o App Router e padrões de acessibilidade/TypeScript.
 
 ## Deploy e operação
-- **Backend**: construa uma imagem Python 3.11, instale o pacote (`pip install .`), configure `DATABASE_URL`, `SUPABASE_URL` e chaves de API. Rode com `uvicorn` ou `gunicorn -k uvicorn.workers.UvicornWorker`. As migrações e seeds podem ser executadas via `start-dev.sh` ou `python -m database.cli` em pipelines.
+- **Backend**: utilize a imagem definida no `Dockerfile` (multi-stage, mínima e com prefetch opcional de modelos Hugging Face). Configure `DATABASE_URL` e `AUTH_SECRET`; para download de modelos defina `HF_MODEL_REPOS` e monte o secret `huggingface_token` conforme `infra/docker/README.md`. As migrações e seeds podem ser executadas via `start-dev.sh`, `python -m database.cli` ou pelo entrypoint do contêiner (`RUN_DB_MIGRATIONS=1`).
 - **Frontend**: `npm run build && npm start` em hosts Node 18+ ou deploy em Vercel/Netlify. O build está alinhado ao Next.js Output File Tracing.
 - **Supabase/Postgres**: mantenha `infra/supabase/schema.sql` e as migrações como fonte da verdade. Valide RLS/policies e habilite backups automáticos nos ambientes gerenciados.
+- **Compose**: `infra/docker/docker-compose.deploy.yml` orquestra backend + Postgres + cache de modelos (`hf-cache`). Use `stack.env` como base de variáveis e copie `huggingface_token.txt.example` para montar tokens via `secrets`.
 
 ## Boas práticas de evolução
 - **Segurança e dados**: centralize segredos em `.env`, habilite TLS e revisões de escopo/JWT. Adote RLS para isolar usuários.
