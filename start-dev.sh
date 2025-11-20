@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$ROOT_DIR/.devlogs"
 VENV_DIR="$ROOT_DIR/.venv"
+POSTGRES_DATA_DIR="${POSTGRES_DATA_DIR:-$HOME/.nica-pro/postgres}"
 POSTGRES_CONTAINER="nica-pro-postgres-dev"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
@@ -48,9 +49,19 @@ trap cleanup EXIT
 
 ensure_python() {
   require_cmd python3
-  if [[ ! -d "$VENV_DIR" ]]; then
+  if [[ -d "$VENV_DIR" && ! -f "$VENV_DIR/bin/activate" ]]; then
+    log "Venv em $VENV_DIR parece incompleta; removendo e recriando"
+    rm -rf "$VENV_DIR"
+  fi
+
+  if [[ ! -f "$VENV_DIR/bin/activate" ]]; then
     log "Criando venv Python em $VENV_DIR"
-    python3 -m venv "$VENV_DIR"
+    if ! python3 -m venv "$VENV_DIR"; then
+      log "Falha ao criar venv (talvez python3-venv não esteja instalado)."
+      log "No Ubuntu, tente: sudo apt-get install -y python3.12-venv"
+      log "Depois, execute novamente ./start-dev.sh"
+      exit 1
+    fi
   fi
   # shellcheck disable=SC1091
   source "$VENV_DIR/bin/activate"
@@ -59,6 +70,14 @@ ensure_python() {
 }
 
 ensure_node() {
+  # Carrega nvm se node não estiver no PATH (shell não interativo não lê .bashrc)
+  if ! command -v node >/dev/null 2>&1; then
+    if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+      # shellcheck disable=SC1090
+      . "$HOME/.nvm/nvm.sh"
+      nvm use --silent default >/dev/null 2>&1 || true
+    fi
+  fi
   require_cmd node
   require_cmd npm
   if [[ ! -d "$ROOT_DIR/frontend/node_modules" ]]; then
@@ -92,6 +111,7 @@ start_postgres() {
   if docker ps --format '{{.Names}}' | grep -Eq "^${POSTGRES_CONTAINER}$"; then
     log "Postgres dev já está em execução"
   else
+    mkdir -p "$POSTGRES_DATA_DIR"
     log "Subindo Postgres dev container (${POSTGRES_CONTAINER})"
     docker run -d --rm \
       --name "$POSTGRES_CONTAINER" \
@@ -99,7 +119,7 @@ start_postgres() {
       -e POSTGRES_PASSWORD=nica \
       -e POSTGRES_DB=nica \
       -p "${POSTGRES_PORT}:5432" \
-      -v "$ROOT_DIR/.devdata/postgres:/var/lib/postgresql/data" \
+      -v "$POSTGRES_DATA_DIR:/var/lib/postgresql/data" \
       postgres:15-alpine >/dev/null
   fi
   wait_for_port localhost "$POSTGRES_PORT" "Postgres"

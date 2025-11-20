@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import DefaultDict
 
-from ..core.models import DailyLog, DashboardState, NutritionPlan, UserProfile
+from core.models import DailyLog, DashboardState, NutritionPlan, UserProfile
 
 
 class MemoryRepository:

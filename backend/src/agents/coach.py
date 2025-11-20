@@ -3,14 +3,14 @@ from __future__ import annotations
 from asyncio import sleep
 from random import choice
 
-from ..core.models import CoachingMessage, MacroBreakdown, MicroBreakdown, TrendInsight
-from ..core.serialization import (
+from core.models import CoachingMessage, MacroBreakdown, MicroBreakdown, TrendInsight
+from core.serialization import (
     coaching_to_json,
     macro_from_json,
     micro_from_json,
     trend_from_json,
 )
-from ..services.security import disclaimer_message
+from services.security import disclaimer_message
 from .base import BaseAgent, JSONDict
 
 

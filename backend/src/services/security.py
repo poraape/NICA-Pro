@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..core.models import CoachingMessage
+from core.models import CoachingMessage
 
 
 CLINICAL_DISCLAIMER = (

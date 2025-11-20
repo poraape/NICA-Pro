@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover - fallback to manual JWT decode
 from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ..core.logging import configure_logging
+from core.logging import configure_logging
 
 
 @dataclass

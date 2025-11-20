@@ -3,8 +3,8 @@ from __future__ import annotations
 from asyncio import sleep
 from statistics import mean
 
-from ..core.models import TrendInsight
-from ..core.serialization import log_from_json, trend_to_json
+from core.models import TrendInsight
+from core.serialization import log_from_json, trend_to_json
 from .base import BaseAgent, JSONDict
 
 

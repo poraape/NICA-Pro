@@ -5,15 +5,15 @@ from logging import Logger
 from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
-from ..agents.base import JSONDict
-from ..agents.calc import CalcAgent
-from ..agents.coach import CoachAgent
-from ..agents.nlp_agent import NLPAgent
-from ..agents.planner import PlannerAgent
-from ..agents.trend import TrendAgent
-from ..agents.ui import UIAgent
-from ..core.constants import PAYLOAD_VERSION
-from ..core.models import (
+from agents.base import JSONDict
+from agents.calc import CalcAgent
+from agents.coach import CoachAgent
+from agents.nlp_agent import NLPAgent
+from agents.planner import PlannerAgent
+from agents.trend import TrendAgent
+from agents.ui import UIAgent
+from core.constants import PAYLOAD_VERSION
+from core.models import (
     DailyLog,
     DashboardState,
     MacroBreakdown,
@@ -22,7 +22,7 @@ from ..core.models import (
     TrendInsight,
     UserProfile,
 )
-from ..core.serialization import (
+from core.serialization import (
     chart_to_json,
     dashboard_from_json,
     dashboard_to_json,
@@ -38,11 +38,11 @@ from ..core.serialization import (
     trend_from_json,
     trend_to_json,
 )
-from ..database import get_repository
-from ..domain.repositories import Repository
-from ..services.event_bus import AsyncEventBus, Event
-from ..services import charting
-from ..services.realtime import RealtimePublisher
+from database import get_repository
+from domain.repositories import Repository
+from services.event_bus import AsyncEventBus, Event
+from services import charting
+from services.realtime import RealtimePublisher
 from .validation import validate_profile
 from .tracing import generate_trace_id
 from .telemetry import record_counter, set_current_trace_id, start_span

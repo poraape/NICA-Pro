@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..domain.entities import (
+from domain.entities import (
     ActivityLevel,
     CaloricTarget,
     CoachingMessage,

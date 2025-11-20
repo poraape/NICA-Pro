@@ -17,7 +17,8 @@ DEFAULT_DB_URL = "sqlite+pysqlite:///./nica.db"
 
 
 def _backend_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    # backend root holds alembic.ini and migrations/
+    return Path(__file__).resolve().parents[2]
 
 
 def _config(database_url: str) -> Config:

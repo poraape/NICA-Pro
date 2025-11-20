@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from ..core.models import MacroBreakdown, MicroBreakdown, UserProfile
+from core.models import MacroBreakdown, MicroBreakdown, UserProfile
 
 _ACTIVITY_FACTORS = {
     "sedentary": 1.2,

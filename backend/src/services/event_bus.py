@@ -5,9 +5,9 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
-from ..agents.base import JSONDict
-from ..core.logging import configure_logging
-from ..core.telemetry import record_counter, set_current_trace_id
+from agents.base import JSONDict
+from core.logging import configure_logging
+from core.telemetry import record_counter, set_current_trace_id
 
 
 @dataclass

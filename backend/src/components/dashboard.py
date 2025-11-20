@@ -4,7 +4,7 @@ from datetime import datetime
 from statistics import mean
 from typing import Iterable
 
-from ..core.models import (
+from core.models import (
     DashboardAlert,
     DailyLog,
     MacroBreakdown,
@@ -17,7 +17,7 @@ from ..core.models import (
     WeekSection,
     WeeklyDayStat,
 )
-from ..agents.calc import estimate_macro_intake
+from agents.calc import estimate_macro_intake
 from .cards import calorie_card, hydration_card, macro_card, system_card
 
 

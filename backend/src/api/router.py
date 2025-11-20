@@ -5,12 +5,12 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from ..core.logging import configure_logging
-from ..core.models import UserProfile
-from ..core.serialization import dashboard_to_json, log_to_json, plan_to_json
-from ..core.orchestrator import get_orchestrator
-from ..core.tracing import TRACE_HEADER, generate_trace_id
-from ..core.telemetry import record_counter, set_current_trace_id, start_span
+from core.logging import configure_logging
+from core.models import UserProfile
+from core.serialization import dashboard_to_json, log_to_json, plan_to_json
+from core.orchestrator import get_orchestrator
+from core.tracing import TRACE_HEADER, generate_trace_id
+from core.telemetry import record_counter, set_current_trace_id, start_span
 from .security import AuthContext, require_auth
 
 router = APIRouter(prefix="/api/v1", tags=["nica-pro"])

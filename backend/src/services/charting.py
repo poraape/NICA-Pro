@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Iterable
 
-from ..core.models import DailyLog, DashboardChart, MacroBreakdown, MicroBreakdown
+from core.models import DailyLog, DashboardChart, MacroBreakdown, MicroBreakdown
 
 
 def radar_chart(macros: MacroBreakdown, actuals: MacroBreakdown) -> DashboardChart:

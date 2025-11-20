@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Iterable
 
-from ..core.models import FoodPortion, MealEntry
+from core.models import FoodPortion, MealEntry
 
 _UNIT_MAP = {
     "g": 1.0,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..resources import Resource
+from opentelemetry.sdk.resources import Resource
 
 
 class MeterProvider:

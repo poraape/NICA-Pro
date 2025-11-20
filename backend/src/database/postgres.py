@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from ..core.serialization import (
+from core.serialization import (
     dashboard_from_json,
     dashboard_to_json,
     log_from_json,
@@ -19,8 +19,8 @@ from ..core.serialization import (
     profile_from_json,
     profile_to_json,
 )
-from ..domain.entities import DailyLog, DashboardState, NutritionPlan, UserProfile
-from ..domain.repositories import Repository
+from domain.entities import DailyLog, DashboardState, NutritionPlan, UserProfile
+from domain.repositories import Repository
 from .models import Base, DailyLogRecord, DashboardRecord, PlanRecord, ProfileRecord
 from .seeds import ensure_reference_data
 

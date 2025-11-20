@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from ..core.logging import configure_logging
-from ..core.orchestrator import get_orchestrator
-from ..api.router import router
+from core.logging import configure_logging
+from core.orchestrator import get_orchestrator
+from api.router import router
 
 logger = configure_logging()
 get_orchestrator(logger)

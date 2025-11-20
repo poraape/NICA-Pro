@@ -1,0 +1,9 @@
+agents
+api
+app
+components
+core
+database
+domain
+opentelemetry
+services

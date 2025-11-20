@@ -12,9 +12,9 @@ except Exception:  # pragma: no cover - fallback when spaCy is unavailable
     spacy = None
     Language = None  # type: ignore[assignment]
 
-from ..core.models import DailyLog, FoodPortion, MealEntry
-from ..core.serialization import log_to_json
-from ..services.normalization import normalize_entries
+from core.models import DailyLog, FoodPortion, MealEntry
+from core.serialization import log_to_json
+from services.normalization import normalize_entries
 from .base import BaseAgent, JSONDict
 
 # --- Domain knowledge ------------------------------------------------------

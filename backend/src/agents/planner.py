@@ -5,7 +5,7 @@ from calendar import day_name
 from dataclasses import replace
 from typing import Any, Iterable
 
-from ..core.models import (
+from core.models import (
     CaloricTarget,
     HydrationPlan,
     MealPlanEntry,
@@ -16,8 +16,8 @@ from ..core.models import (
     SubstitutionOption,
     UserProfile,
 )
-from ..core.serialization import plan_to_json, profile_from_json
-from ..services import nutrition
+from core.serialization import plan_to_json, profile_from_json
+from services import nutrition
 from .base import BaseAgent, JSONDict
 from .substitution import SubstitutionPrepAgent
 

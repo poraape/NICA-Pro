@@ -4,7 +4,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from backend.src.database.models import Base
+# PYTHONPATH is set to backend/src by start-dev.sh; import directly from local package
+from database.models import Base
 
 config = context.config
 if config.config_file_name is not None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import sleep
 from datetime import datetime
 
-from ..components.dashboard import (
+from components.dashboard import (
     build_alerts,
     build_meal_insights,
     build_navigation_links,
@@ -11,8 +11,8 @@ from ..components.dashboard import (
     build_today_section,
     build_week_section,
 )
-from ..core.models import DashboardState
-from ..core.serialization import (
+from core.models import DashboardState
+from core.serialization import (
     chart_from_json,
     coaching_from_json,
     dashboard_to_json,

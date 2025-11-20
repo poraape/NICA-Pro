@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 
-from ..core.serialization import dashboard_to_json
+from core.serialization import dashboard_to_json
 from .base import BaseAgent, JSONDict
 from .dashboard_agent import DashboardAgent
 

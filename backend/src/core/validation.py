@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from math import pow
 
-from ..core.models import UserProfile
+from core.models import UserProfile
 
 
 def _calculate_bmi(profile: UserProfile) -> float:

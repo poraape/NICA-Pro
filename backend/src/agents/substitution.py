@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
-from ..core.serialization import plan_from_json
+from core.serialization import plan_from_json
 from .base import BaseAgent, JSONDict
 
 _CATEGORY_ORDER = [

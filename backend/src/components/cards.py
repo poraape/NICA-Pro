@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from ..core.models import DashboardCard, MacroBreakdown
+from core.models import DashboardCard, MacroBreakdown
 
 
 def macro_card(label: str, value: float, target: float) -> DashboardCard:

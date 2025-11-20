@@ -7,7 +7,7 @@ O script `./start-dev.sh` inicia o Postgres/Supabase, aplica migrações e seeds
 2. **Banco de dados** (prioridade decrescente):
    - `USE_SUPABASE=true` → inicia Supabase local (`supabase start --exclude analytics`) e usa `postgresql://postgres:postgres@localhost:54322/postgres`.
    - `USE_SQLITE=true` → usa SQLite (`sqlite+pysqlite://…/backend/nica.db`).
-   - Padrão → sobe Postgres via Docker (`nica-pro-postgres-dev`, porta 5432) com volume persistente em `.devdata/postgres`.
+   - Padrão → sobe Postgres via Docker (`nica-pro-postgres-dev`, porta 5432) com volume persistente em `~/.nica-pro/postgres` (ajustável via `POSTGRES_DATA_DIR`). Isso evita permissões problemáticas em partições montadas como `/mnt/c` no WSL.
 3. **Ambiente Python**: cria venv em `.venv`, instala `backend` em modo editável com extras `dev`, exporta `PYTHONPATH` e roda `python -m database.cli migrate-seed` para garantir schema e dados de referência.
 4. **Frontend**: instala dependências (`frontend/node_modules`) se ausentes.
 5. **Serviços de aplicação**: inicia `uvicorn app.main:app` (porta 8000 por padrão) com healthcheck automático e, depois, `npm run dev` do Next.js (porta 3000 por padrão).
@@ -41,4 +41,4 @@ Durante a execução, os logs ficam em `.devlogs/backend.log` e `.devlogs/fronte
 1. Copie um `.env` local com `AUTH_SECRET`, `RATE_LIMIT` e, se necessário, `DATABASE_URL` customizada.
 2. Rode `./start-dev.sh` e espere a mensagem de prontidão dos serviços.
 3. Crie usuários/metas via frontend ou diretamente na API (JWT/scopes já são exigidos conforme a rota).
-4. Ao finalizar, pressione `Ctrl+C`; o script derruba os processos e o container Postgres interno, preservando os dados no volume `.devdata/postgres`.
+4. Ao finalizar, pressione `Ctrl+C`; o script derruba os processos e o container Postgres interno, preservando os dados no volume `~/.nica-pro/postgres` (ou no caminho definido em `POSTGRES_DATA_DIR`).

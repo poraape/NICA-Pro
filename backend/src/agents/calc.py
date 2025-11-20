@@ -4,7 +4,7 @@ from asyncio import sleep
 from dataclasses import replace
 from typing import Mapping
 
-from ..core.models import (
+from core.models import (
     ActivityLevel,
     DailyLog,
     Goal,
@@ -13,7 +13,7 @@ from ..core.models import (
     Sex,
     UserProfile,
 )
-from ..core.serialization import (
+from core.serialization import (
     log_from_json,
     macro_to_json,
     micro_to_json,
