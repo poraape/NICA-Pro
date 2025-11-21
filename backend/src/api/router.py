@@ -18,6 +18,15 @@ logger = configure_logging()
 orchestrator = get_orchestrator(logger)
 
 
+def _resolve_trace_id(request: Request) -> str:
+    header_trace = request.headers.get(TRACE_HEADER)
+    trace_id = getattr(request.state, "trace_id", header_trace or generate_trace_id())
+    set_current_trace_id(trace_id)
+    if not getattr(request.state, "trace_id", None):
+        request.state.trace_id = trace_id
+    return trace_id
+
+
 class ProfilePayload(BaseModel):
     name: str
     age: int = Field(ge=18, le=90)
@@ -67,8 +76,7 @@ async def create_plan(
     request: Request,
     auth: AuthContext = require_auth(["plan:write"]),
 ) -> dict:
-    trace_id = request.headers.get(TRACE_HEADER, generate_trace_id())
-    set_current_trace_id(trace_id)
+    trace_id = _resolve_trace_id(request)
     record_counter("api.calls", attributes={"route": "plan", "actor": auth.subject})
     profile = UserProfile(**payload.model_dump())
     with start_span(
@@ -89,8 +97,7 @@ async def diary(
     request: Request,
     auth: AuthContext = require_auth(["diary:write"]),
 ) -> dict:
-    trace_id = request.headers.get(TRACE_HEADER, generate_trace_id())
-    set_current_trace_id(trace_id)
+    trace_id = _resolve_trace_id(request)
     record_counter("api.calls", attributes={"route": "diary", "actor": auth.subject})
     if auth.subject != payload.user:
         raise HTTPException(status_code=403, detail="Usuário autenticado não corresponde ao diário")
@@ -107,8 +114,7 @@ async def dashboard(
     request: Request,
     auth: AuthContext = require_auth(["dashboard:read"]),
 ) -> dict:
-    trace_id = request.headers.get(TRACE_HEADER, generate_trace_id())
-    set_current_trace_id(trace_id)
+    trace_id = _resolve_trace_id(request)
     record_counter(
         "api.calls", attributes={"route": "dashboard", "actor": auth.subject}
     )

@@ -14,7 +14,7 @@ USE_SQLITE="${USE_SQLITE:-false}"
 DATABASE_URL="${DATABASE_URL:-postgresql://nica:nica@localhost:${POSTGRES_PORT}/nica}"
 NEXT_PUBLIC_API_URL_DEFAULT="http://localhost:${BACKEND_PORT}"
 NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_URL_DEFAULT}}"
-AUTH_SECRET="${AUTH_SECRET:-dev-insecure-secret}"
+AUTH_SECRET="${AUTH_SECRET:-}"
 RATE_LIMIT="${RATE_LIMIT:-30}"
 
 mkdir -p "$LOG_DIR"
@@ -22,6 +22,11 @@ mkdir -p "$LOG_DIR"
 log() {
   echo "[$(date -Iseconds)] $*"
 }
+
+if [[ -z "$AUTH_SECRET" ]]; then
+  log "Erro: defina AUTH_SECRET com uma chave aleatória de pelo menos 16 caracteres (ex.: openssl rand -hex 32)"
+  exit 1
+fi
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then

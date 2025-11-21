@@ -1,14 +1,52 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const AUTH_TOKEN_ENV = process.env.NEXT_PUBLIC_API_TOKEN;
+const AUTH_STORAGE_KEY = "nica-pro-auth-token";
+
+function getAuthToken(): string | null {
+  if (typeof window !== "undefined") {
+    const stored = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (stored) return stored;
+  }
+  return AUTH_TOKEN_ENV ?? null;
+}
+
+export function persistAuthToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (!token) {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    return;
+  }
+  window.localStorage.setItem(AUTH_STORAGE_KEY, token);
+}
+
+function authHeaders() {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = getAuthToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || "Erro ao comunicar com a API");
+    let detail = "Erro ao comunicar com a API";
+    try {
+      const body = await response.json();
+      detail = (body as { detail?: string; error?: string }).detail ?? (body as { error?: string }).error ?? detail;
+    } catch (error) {
+      const fallback = await response.text();
+      if (fallback) detail = fallback;
+    }
+
+    if (response.status === 401) {
+      throw new Error(`Sessão expirada ou inválida: ${detail}`);
+    }
+    if (response.status === 403) {
+      throw new Error(`Acesso negado: ${detail}`);
+    }
+    throw new Error(detail);
   }
   return response.json() as Promise<T>;
 }
-
-const jsonHeaders = { "Content-Type": "application/json" };
 
 export interface ProfilePayload {
   name: string;
@@ -166,7 +204,7 @@ export interface DashboardResponse {
 export function upsertPlan(payload: ProfilePayload) {
   return fetch(`${API_BASE}/api/v1/plan`, {
     method: "POST",
-    headers: jsonHeaders,
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   }).then((res) => handleResponse<NutritionPlanResponse>(res));
 }
@@ -174,13 +212,15 @@ export function upsertPlan(payload: ProfilePayload) {
 export function syncDiary(payload: DiaryPayload) {
   return fetch(`${API_BASE}/api/v1/diary`, {
     method: "POST",
-    headers: jsonHeaders,
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   }).then((res) => handleResponse<DiaryResponse>(res));
 }
 
 export function fetchDashboard(user: string) {
-  return fetch(`${API_BASE}/api/v1/dashboard/${user}`).then((res) => handleResponse<DashboardResponse>(res));
+  return fetch(`${API_BASE}/api/v1/dashboard/${user}`, { headers: authHeaders() }).then((res) =>
+    handleResponse<DashboardResponse>(res)
+  );
 }
 
 export interface CreateUserPayload {
@@ -192,7 +232,7 @@ export interface CreateUserPayload {
 export function createUser(payload: CreateUserPayload) {
   return fetch(`${API_BASE}/api/v1/users`, {
     method: "POST",
-    headers: jsonHeaders,
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   }).then((res) => handleResponse<{ id: string }>(res));
 }
@@ -206,7 +246,7 @@ export interface UpsertGoalsPayload {
 export function upsertGoals(payload: UpsertGoalsPayload) {
   return fetch(`${API_BASE}/api/v1/goals`, {
     method: "POST",
-    headers: jsonHeaders,
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   }).then((res) => handleResponse<{ ok: boolean }>(res));
 }
@@ -220,7 +260,7 @@ export interface CreateMealPayload {
 export function createMeal(payload: CreateMealPayload) {
   return fetch(`${API_BASE}/api/v1/meals`, {
     method: "POST",
-    headers: jsonHeaders,
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   }).then((res) => handleResponse<{ id: string }>(res));
 }

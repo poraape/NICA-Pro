@@ -57,14 +57,38 @@ limiter = InMemoryRateLimiter(limit=int(os.getenv("RATE_LIMIT", "30")))
 logger = configure_logging()
 
 
+class AuthConfigError(RuntimeError):
+    """Raised when authentication configuration is missing or invalid."""
+
+
 def _get_secret() -> str:
-    return os.getenv("AUTH_SECRET", "dev-insecure-secret")
+    secret = os.getenv("AUTH_SECRET")
+    if not secret:
+        raise AuthConfigError("AUTH_SECRET must be configured")
+    if len(secret) < 16:
+        raise AuthConfigError("AUTH_SECRET must contain at least 16 characters")
+    return secret
+
+
+def ensure_auth_configured() -> None:
+    """Fail fast when the service starts without a valid secret."""
+
+    try:
+        _get_secret()
+    except AuthConfigError as exc:
+        logger.error("auth.config_missing", extra={"error": str(exc)})
+        raise
 
 
 def _decode_token(token: str) -> dict:
+    try:
+        secret = _get_secret()
+    except AuthConfigError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
     if jwt is not None:
         try:
-            return jwt.decode(token, _get_secret(), algorithms=["HS256"])
+            return jwt.decode(token, secret, algorithms=["HS256"])
         except Exception as exc:  # pragma: no cover - passthrough to HTTP error
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido") from exc
     try:
@@ -73,7 +97,7 @@ def _decode_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token malformado") from exc
 
     signing_input = f"{header_b64}.{payload_b64}".encode()
-    expected_sig = hmac.new(_get_secret().encode(), signing_input, hashlib.sha256).digest()
+    expected_sig = hmac.new(secret.encode(), signing_input, hashlib.sha256).digest()
     decoded_sig = base64.urlsafe_b64decode(signature_b64 + "==")
     if not hmac.compare_digest(expected_sig, decoded_sig):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Assinatura inválida")
