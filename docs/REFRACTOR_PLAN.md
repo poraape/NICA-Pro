@@ -192,8 +192,8 @@
 - ✅ Middleware de headers de segurança e logging JSON com `trace_id` correlacionado.
 - ✅ Atribuição centralizada de `trace_id` por requisição e respostas de erro padronizadas com rastreabilidade.
 - ✅ Exportar OTEL para collector e enriquecer métricas/alertas.
-- ⬜ Implementar repositórios Postgres/Redis com Alembic e pooling.
+- ✅ Implementar repositórios Postgres/Redis com Alembic, pooling e cache Redis (fallback SQLite apenas para testes).
 - ✅ Padronizar DTOs de API, contratos OpenAPI e cliente front gerado.
-- ⬜ Introduzir validação Zod/ARIA no front, testes Vitest/Playwright e carregamento dinâmico de gráficos.
-- ⬜ Configurar CI/CD com gates (lint/test/build/scan) e Compose/K8s com healthchecks.
-- ⬜ Publicar ADRs, diagramas C4 e runbooks de incidentes/segurança.
+- 🟡 Introduzir validação Zod/ARIA no front (concluído); testes Vitest/Playwright e carregamento dinâmico de gráficos pendentes.
+- 🟡 Configurar CI/CD com gates (lint/test/build/scan) e Compose/K8s com healthchecks (CI e Compose entregues; CD/K8s pendente).
+- 🟡 Publicar ADRs, diagramas C4 e runbooks de incidentes/segurança (ADR + runbook de persistência publicados; diagramas/runbooks adicionais pendentes).

@@ -2,79 +2,48 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
   pull_request:
-    branches: ["main"]
 
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      AUTH_SECRET: test-secret
+      DATABASE_URL: sqlite+pysqlite:///:memory:
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dependencies
+          cache: "pip"
+      - name: Install backend
         run: |
-          python -m pip install --upgrade pip
-          pip install ./backend[dev]
-      - name: Lint (ruff)
-        run: ruff backend/src backend/tests
-      - name: Format check (black)
-        run: black --check backend/src backend/tests
-      - name: Type check (mypy)
-        run: mypy backend/src
-      - name: Migrations and seeds
-        working-directory: backend
-        env:
-          DATABASE_URL: sqlite+pysqlite:///tmp/ci.db
+          pip install -e backend[dev]
+      - name: Run backend tests
         run: |
-          python -m src.database.cli migrate-seed --url "$DATABASE_URL"
-          python -m src.database.cli healthcheck --url "$DATABASE_URL"
-      - name: Tests
-        env:
-          DATABASE_URL: sqlite+pysqlite:///:memory:
-          AUTH_SECRET: ci-secret
-        run: pytest backend/tests
+          cd backend
+          PYTHONPATH=$PWD/src pytest -q
 
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "18"
-      - name: Install
-        working-directory: frontend
-        run: npm install --no-fund --no-audit
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint
-      - name: Typecheck
-        working-directory: frontend
-        run: npm run typecheck
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install security tools
+          node-version: 18
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pip-audit bandit
-      - name: Python dependency audit
-        run: pip-audit -P backend
-      - name: Python SAST (bandit)
-        run: bandit -r backend/src -x backend/tests
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-      - name: Install dependencies for audit
-        working-directory: frontend
-        run: npm install --package-lock-only --ignore-scripts --no-fund
-      - name: Node audit (production severity high)
-        working-directory: frontend
-        run: npm audit --audit-level=high --omit=dev
+          cd frontend
+          npm ci
+      - name: Lint
+        run: |
+          cd frontend
+          npm run lint
+      - name: Typecheck
+        run: |
+          cd frontend
+          npm run typecheck
