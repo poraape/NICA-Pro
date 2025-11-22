@@ -1,0 +1,85 @@
+.macro-bar {
+  position: relative;
+  width: 100%;
+  min-width: 200px;
+  color: var(--color-text-inverse);
+}
+
+.macro-bar__track {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-interactive);
+  box-shadow: var(--shadow-card-sm);
+}
+
+.macro-bar__segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 4px;
+  transition: width 300ms ease;
+  color: inherit;
+}
+
+.macro-bar__segment + .macro-bar__segment {
+  border-left: 2px solid rgba(255, 255, 255, 0.92);
+}
+
+.macro-bar__segment--textured {
+  background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.18) 0,
+      rgba(255, 255, 255, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+  background-blend-mode: overlay;
+}
+
+.macro-bar__label {
+  padding: 0 var(--spacing-2);
+  font-size: var(--typography-font-size-caption);
+  font-weight: var(--typography-font-weight-medium);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.macro-bar__goal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.macro-bar__goal-icon {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  box-shadow: var(--shadow-card-sm);
+}
+
+.macro-bar--small .macro-bar__label {
+  font-size: var(--typography-font-size-mini);
+}
+
+.macro-bar--large .macro-bar__label {
+  font-size: var(--typography-font-size-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .macro-bar__segment {
+    transition-duration: 0ms;
+  }
+}

@@ -1,0 +1,37 @@
+.meal-checklist {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-height: 44px;
+}
+
+.meal-checklist__item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--color-border-default);
+  background: var(--color-surface-solid);
+  box-shadow: var(--shadow-card-sm);
+  transition: transform 150ms var(--animation-standard), border-color 150ms var(--animation-standard);
+}
+
+.meal-checklist__item--done {
+  border-color: var(--color-feedback-success);
+  transform: scale(1.05);
+  background: var(--color-feedback-background-success);
+}
+
+.meal-checklist__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border-muted);
+}
+
+.meal-checklist__empty {
+  font-size: var(--typography-size-caption);
+  color: var(--color-text-secondary);
+}

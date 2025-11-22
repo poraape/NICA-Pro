@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAppState } from "@/lib/store";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: "􀊯" },
@@ -15,7 +15,7 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useAppState();
+  const { theme, setTheme } = useTheme();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/20 bg-white/60 text-slate-900 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:text-white">
@@ -47,7 +47,7 @@ export function Navbar() {
           </div>
           <button
             type="button"
-            onClick={() => setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")}
+            onClick={() => setTheme(theme === "dark" ? "light" : theme === "light" ? "auto" : "dark")}
             className="rounded-full border border-white/30 bg-white/60 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:border-white/20 dark:bg-slate-800/80 dark:text-white"
             aria-label="Alternar tema"
           >

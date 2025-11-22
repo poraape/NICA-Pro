@@ -1,0 +1,63 @@
+.bottom-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+}
+
+.bottom-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+}
+
+.bottom-sheet__content {
+  align-self: end;
+  background: var(--color-surface-solid);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-lg);
+  padding: var(--spacing-4);
+  max-height: 80vh;
+  overflow: auto;
+  animation: sheet-enter 200ms var(--easing-standard);
+}
+
+.bottom-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.bottom-sheet__header h3 {
+  margin: 0;
+  font-size: var(--typography-font-size-body-lg);
+  color: var(--color-text-primary);
+}
+
+.bottom-sheet__close {
+  border: none;
+  background: transparent;
+  font-size: var(--typography-font-size-h4);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.bottom-sheet__body {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+@keyframes sheet-enter {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,82 @@
+.nutri-card {
+  background: rgba(255, 255, 255, var(--glass-opacity, 0.75));
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-card-md);
+  color: var(--color-text-primary);
+  transition:
+    transform 300ms var(--animation-easing-standard),
+    box-shadow 300ms var(--animation-easing-standard),
+    border-color 200ms ease;
+}
+
+[data-theme="dark"] .nutri-card {
+  background: rgba(30, 30, 30, var(--glass-opacity, 0.8));
+}
+
+.nutri-card--elevated {
+  box-shadow: var(--shadow-card-lg);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+
+.nutri-card--status-on-track {
+  border-color: var(--color-feedback-success);
+  border-width: 2px;
+}
+
+.nutri-card--status-near-limit {
+  border-color: var(--color-feedback-warning);
+  border-width: 2px;
+}
+
+.nutri-card--status-exceeded {
+  border-color: var(--color-feedback-danger);
+  border-width: 2px;
+}
+
+.nutri-card--clickable {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .nutri-card--clickable:hover {
+    transform: scale(1.02) translateY(-8px);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.nutri-card--clickable:active {
+  transform: scale(0.98);
+}
+
+.nutri-card--clickable:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 4px;
+}
+
+@supports not (backdrop-filter: blur(24px)) {
+  .nutri-card {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  [data-theme="dark"] .nutri-card {
+    background: rgba(30, 30, 30, 0.95);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nutri-card {
+    background: var(--color-background-elevated);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--color-border-strong);
+    border-width: 2px;
+  }
+}
