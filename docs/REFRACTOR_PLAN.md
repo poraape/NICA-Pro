@@ -191,7 +191,7 @@
 - ✅ Segredo de autenticação obrigatório e validação de startup.
 - ✅ Middleware de headers de segurança e logging JSON com `trace_id` correlacionado.
 - ✅ Atribuição centralizada de `trace_id` por requisição e respostas de erro padronizadas com rastreabilidade.
-- ⬜ Exportar OTEL para collector e enriquecer métricas/alertas.
+- ✅ Exportar OTEL para collector e enriquecer métricas/alertas.
 - ⬜ Implementar repositórios Postgres/Redis com Alembic e pooling.
 - ⬜ Padronizar DTOs de API, contratos OpenAPI e cliente front gerado.
 - ⬜ Introduzir validação Zod/ARIA no front, testes Vitest/Playwright e carregamento dinâmico de gráficos.
