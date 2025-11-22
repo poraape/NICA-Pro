@@ -1,0 +1,142 @@
+.nutri-input {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-scale-1);
+  width: 100%;
+  font-family: var(--typography-font-family-body);
+  color: var(--color-text-primary);
+}
+
+.nutri-input__control {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-scale-3) var(--spacing-scale-4);
+  transition:
+    border-color 150ms var(--animation-easing-standard),
+    box-shadow 150ms var(--animation-easing-standard),
+    background-color 150ms var(--animation-easing-standard);
+}
+
+.nutri-input__field {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--typography-font-family-body);
+  font-size: var(--typography-size-md);
+  line-height: var(--typography-line-height-normal);
+  resize: vertical;
+}
+
+.nutri-input__field::placeholder {
+  color: var(--color-text-subtle);
+  opacity: 0.8;
+}
+
+.nutri-input__label {
+  position: absolute;
+  top: 50%;
+  left: var(--spacing-scale-4);
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  transition:
+    transform 150ms var(--animation-easing-standard),
+    color 150ms var(--animation-easing-standard),
+    font-size 150ms var(--animation-easing-standard);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-background-elevated) 35%,
+    var(--color-background-elevated) 100%
+  );
+  padding: 0 var(--spacing-scale-1);
+  line-height: 1;
+}
+
+.nutri-input.is-focused .nutri-input__control,
+.nutri-input__control[data-state="focused"] {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-border-focus) 35%, transparent);
+}
+
+.nutri-input.has-error .nutri-input__control,
+.nutri-input__control[data-state="error"] {
+  border-color: var(--color-feedback-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-feedback-danger) 30%, transparent);
+  animation: nutri-input-shake 180ms ease-in-out;
+}
+
+.nutri-input.is-disabled .nutri-input__control {
+  background: var(--color-background-muted);
+  border-color: var(--color-border-muted);
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+}
+
+.nutri-input.is-disabled .nutri-input__field {
+  cursor: not-allowed;
+}
+
+.nutri-input.is-filled .nutri-input__label,
+.nutri-input.is-focused .nutri-input__label {
+  transform: translateY(-130%);
+  color: var(--color-text-secondary);
+  font-size: var(--typography-size-sm);
+}
+
+.nutri-input.has-error .nutri-input__label {
+  color: var(--color-feedback-danger);
+}
+
+.nutri-input__description {
+  margin: 0;
+  font-size: var(--typography-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--typography-line-height-normal);
+}
+
+.nutri-input__error {
+  margin: 0;
+  font-size: var(--typography-size-sm);
+  color: var(--color-feedback-danger);
+  line-height: var(--typography-line-height-normal);
+}
+
+.nutri-input--textarea .nutri-input__field {
+  min-height: 120px;
+}
+
+@keyframes nutri-input-shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutri-input__control {
+    transition: border-color 120ms ease-out, background-color 120ms ease-out;
+  }
+
+  .nutri-input__control[data-state="error"] {
+    animation: none;
+  }
+}

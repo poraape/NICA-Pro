@@ -11,8 +11,6 @@ import {
   type ProfilePayload
 } from "./api";
 
-export type ThemeMode = "system" | "light" | "dark";
-
 interface DiaryDraft {
   entries: string[];
   draftText: string;
@@ -32,7 +30,6 @@ interface AppState {
   plan: NutritionPlanResponse["plan"] | null;
   loading: boolean;
   syncing: boolean;
-  theme: ThemeMode;
   toasts: ToastMessage[];
 }
 
@@ -41,7 +38,6 @@ interface AppContextValue extends AppState {
   updateDiaryDraft: (text: string) => void;
   addDiaryEntry: (entry: string) => void;
   removeDiaryEntry: (index: number) => void;
-  setTheme: (mode: ThemeMode) => void;
   refreshDashboard: () => Promise<void>;
   syncDiary: () => Promise<void>;
   pushToast: (toast: Omit<ToastMessage, "id">) => void;
@@ -75,17 +71,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     plan: null,
     loading: false,
     syncing: false,
-    theme: "system",
     toasts: []
   });
-
-  const applyThemeClass = (mode: ThemeMode) => {
-    if (typeof window === "undefined") return;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const shouldDark = mode === "dark" || (mode === "system" && prefersDark);
-    document.documentElement.classList.toggle("dark", shouldDark);
-    document.documentElement.style.setProperty("color-scheme", shouldDark ? "dark" : "light");
-  };
 
   const persistState = (next: AppState) => {
     if (typeof window === "undefined") return;
@@ -100,7 +87,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const parsed = JSON.parse(raw) as Partial<AppState>;
       setState((prev) => ({ ...prev, ...parsed, dashboard: prev.dashboard, plan: prev.plan }));
-      applyThemeClass((parsed as AppState).theme ?? "system");
     } catch (error) {
       console.error("Failed to hydrate state", error);
     }
@@ -108,9 +94,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     hydrateFromStorage();
-    if (typeof window !== "undefined") {
-      applyThemeClass(state.theme);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -201,15 +184,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const setTheme = (mode: ThemeMode) => {
-    setState((prev) => {
-      const next = { ...prev, theme: mode };
-      persistState(next);
-      applyThemeClass(mode);
-      return next;
-    });
-  };
-
   const value = useMemo(
     () => ({
       ...state,
@@ -217,7 +191,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateDiaryDraft,
       addDiaryEntry,
       removeDiaryEntry,
-      setTheme,
       refreshDashboard,
       syncDiary,
       pushToast,

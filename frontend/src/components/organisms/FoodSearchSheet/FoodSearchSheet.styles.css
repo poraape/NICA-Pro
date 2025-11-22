@@ -1,0 +1,66 @@
+.food-search-input-wrapper {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface-solid);
+}
+
+.barcode-scanner-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-background-muted);
+  cursor: pointer;
+}
+
+.search-results {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface-solid);
+  cursor: pointer;
+  text-align: left;
+}
+
+.search-result-item:hover {
+  border-color: var(--color-border-strong);
+}
+
+.result-info h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--typography-font-size-body);
+}
+
+.result-source {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--typography-font-size-caption);
+}
+
+.result-calories {
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.search-status {
+  margin: 0;
+  color: var(--color-text-secondary);
+}

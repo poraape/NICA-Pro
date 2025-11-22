@@ -1,0 +1,130 @@
+.nutri-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-scale-2);
+  height: 44px;
+  padding: 0 var(--spacing-scale-4);
+  border: 2px solid var(--nutri-button-border, transparent);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--typography-font-family-body);
+  font-weight: var(--typography-weight-medium);
+  line-height: var(--typography-line-height-snug);
+  background: var(--nutri-button-bg);
+  color: var(--nutri-button-text);
+  box-shadow: var(--nutri-button-shadow, var(--shadow-low));
+  transition:
+    transform calc(var(--animation-duration-fast, 200) * 1ms) var(--animation-easing-standard),
+    box-shadow calc(var(--animation-duration-fast, 200) * 1ms) var(--animation-easing-standard),
+    background calc(var(--animation-duration-fast, 200) * 1ms) var(--animation-easing-standard),
+    color calc(var(--animation-duration-fast, 200) * 1ms) var(--animation-easing-standard);
+}
+
+.nutri-button:focus-visible {
+  outline: 3px solid var(--nutri-button-outline, var(--color-border-focus));
+  outline-offset: 2px;
+}
+
+.nutri-button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.nutri-button:not(:disabled):hover {
+  background: var(--nutri-button-bg-hover, var(--nutri-button-bg));
+  color: var(--nutri-button-text-hover, var(--nutri-button-text));
+  box-shadow: var(--nutri-button-shadow-hover, var(--nutri-button-shadow));
+}
+
+.nutri-button:not(:disabled):active {
+  background: var(--nutri-button-bg-active, var(--nutri-button-bg-hover, var(--nutri-button-bg)));
+  box-shadow: var(--nutri-button-shadow-active, var(--nutri-button-shadow));
+}
+
+.nutri-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--nutri-button-bg-disabled, var(--nutri-button-bg));
+  color: var(--nutri-button-text-disabled, var(--nutri-button-text));
+  border-color: var(--nutri-button-border-disabled, var(--nutri-button-border));
+  box-shadow: var(--shadow-none);
+}
+
+.nutri-button--full-width {
+  width: 100%;
+}
+
+.nutri-button--small {
+  height: 32px;
+  padding: 0 var(--spacing-scale-3);
+  font-size: var(--typography-size-sm);
+}
+
+.nutri-button--medium {
+  height: 44px;
+  padding: 0 var(--spacing-scale-4);
+  font-size: var(--typography-size-md);
+}
+
+.nutri-button--large {
+  height: 56px;
+  padding: 0 var(--spacing-scale-6);
+  font-size: var(--typography-size-lg);
+}
+
+.nutri-button__text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nutri-button__icon-left,
+.nutri-button__icon-right {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nutri-button__icon-left {
+  margin-right: var(--spacing-scale-2);
+}
+
+.nutri-button__icon-right {
+  margin-left: var(--spacing-scale-2);
+}
+
+.nutri-button--loading .nutri-button__text,
+.nutri-button--loading .nutri-button__icon-left,
+.nutri-button--loading .nutri-button__icon-right {
+  opacity: 0;
+}
+
+.nutri-button__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid transparent;
+  border-top-color: var(--nutri-button-spinner-color, currentColor);
+  border-right-color: var(--nutri-button-spinner-color, currentColor);
+  border-radius: 9999px;
+  animation: nutri-button-spin calc(var(--animation-duration-normal, 250) * 1ms) linear infinite;
+}
+
+@keyframes nutri-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutri-button {
+    transition: opacity 120ms ease-out;
+  }
+
+  .nutri-button:not(:disabled):active {
+    transform: none;
+  }
+
+  .nutri-button__spinner {
+    animation-duration: calc(var(--animation-duration-slow, 350) * 1ms);
+  }
+}

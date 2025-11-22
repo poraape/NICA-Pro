@@ -1,0 +1,58 @@
+.nutri-progress-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-interactive-primary-default);
+  isolation: isolate;
+}
+
+.nutri-progress-ring__svg {
+  transform: rotate(-90deg);
+}
+
+.nutri-progress-ring__track,
+.nutri-progress-ring__indicator {
+  fill: none;
+}
+
+.nutri-progress-ring__track {
+  stroke: color-mix(in srgb, currentColor 20%, transparent);
+  stroke-linecap: round;
+}
+
+.nutri-progress-ring__indicator {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 4px 12px color-mix(in srgb, currentColor 30%, transparent));
+}
+
+.nutri-progress-ring__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-1);
+  font-family: var(--typography-font-family-base);
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.nutri-progress-ring__value {
+  font-size: var(--typography-font-size-title-sm);
+  font-weight: var(--typography-font-weight-semibold);
+  line-height: 1.1;
+}
+
+.nutri-progress-ring__unit {
+  font-size: var(--typography-font-size-caption);
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutri-progress-ring__indicator {
+    transition-duration: 0ms;
+  }
+}

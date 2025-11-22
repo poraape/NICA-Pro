@@ -1,0 +1,63 @@
+.tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip__bubble {
+  position: absolute;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 120ms var(--easing-standard), transform 120ms var(--easing-standard);
+
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-secondary, rgba(0, 0, 0, 0.8));
+  color: var(--color-text-primary);
+  font-size: var(--font-size-caption);
+  box-shadow: var(--shadow-card-sm);
+  white-space: nowrap;
+}
+
+.tooltip:hover .tooltip__bubble,
+.tooltip:focus-within .tooltip__bubble {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip--top .tooltip__bubble {
+  bottom: calc(100% + var(--spacing-2));
+  left: 50%;
+  transform: translate(-50%, 4px);
+}
+
+.tooltip--right .tooltip__bubble {
+  left: calc(100% + var(--spacing-2));
+  top: 50%;
+  transform: translate(4px, -50%);
+}
+
+.tooltip--bottom .tooltip__bubble {
+  top: calc(100% + var(--spacing-2));
+  left: 50%;
+  transform: translate(-50%, -4px);
+}
+
+.tooltip--left .tooltip__bubble {
+  right: calc(100% + var(--spacing-2));
+  top: 50%;
+  transform: translate(-4px, -50%);
+}
+
+.tooltip:hover .tooltip__bubble,
+.tooltip:focus-within .tooltip__bubble {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip__bubble {
+    transition: opacity 100ms ease-out;
+    transform: none;
+  }
+}

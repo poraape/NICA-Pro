@@ -1,0 +1,42 @@
+.nutri-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: currentColor;
+  font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Symbols Sharp", sans-serif;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  text-rendering: optimizeLegibility;
+}
+
+.nutri-icon--monochrome {
+  color: inherit;
+}
+
+.nutri-icon--hierarchical {
+  color: color-mix(in srgb, currentColor 80%, transparent);
+}
+
+.nutri-icon--multicolor {
+  filter: saturate(1.05);
+}
+
+.nutri-icon--small {
+  width: 16px;
+  height: 16px;
+}
+
+.nutri-icon--medium {
+  width: 24px;
+  height: 24px;
+}
+
+.nutri-icon--large {
+  width: 32px;
+  height: 32px;
+}
+
+.nutri-icon--xl {
+  width: 48px;
+  height: 48px;
+}

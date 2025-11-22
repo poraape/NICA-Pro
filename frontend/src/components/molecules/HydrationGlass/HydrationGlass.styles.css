@@ -1,0 +1,83 @@
+.hydration-glass {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-primary);
+}
+
+.hydration-glass__vessel {
+  position: relative;
+  width: 56px;
+  height: 120px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border-default);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(10px) saturate(130%);
+}
+
+.hydration-glass__liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--hydration-fill);
+  background: linear-gradient(135deg, var(--color-interactive-primary-default), var(--color-interactive-primary-hover));
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: height 400ms var(--animation-emphasized);
+}
+
+.hydration-glass__bubble {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  filter: blur(0.5px);
+  animation: hydration-bubble 1.6s ease-in-out infinite;
+}
+
+.hydration-glass__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--spacing-1);
+  font-weight: var(--typography-weight-semibold);
+  letter-spacing: 0.01em;
+}
+
+.hydration-glass__value {
+  font-size: var(--typography-size-body-lg);
+}
+
+.hydration-glass__unit {
+  font-size: var(--typography-size-caption);
+  color: var(--color-text-secondary);
+}
+
+.hydration-glass--small .hydration-glass__vessel {
+  width: 44px;
+  height: 92px;
+}
+
+.hydration-glass--large .hydration-glass__vessel {
+  width: 64px;
+  height: 140px;
+}
+
+@keyframes hydration-bubble {
+  0% {
+    transform: translateY(4px) scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-4px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(4px) scale(0.9);
+    opacity: 0.6;
+  }
+}

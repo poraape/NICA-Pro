@@ -1,0 +1,48 @@
+.nutri-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-interactive-primary-default);
+}
+
+.nutri-spinner svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nutri-spinner__track {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 20%, transparent);
+  stroke-width: 6;
+}
+
+.nutri-spinner__indicator {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 80;
+  transform-origin: center;
+  animation: nutri-spinner-rotate 900ms linear infinite;
+}
+
+@keyframes nutri-spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+    stroke-dashoffset: 120;
+  }
+  50% {
+    stroke-dashoffset: 60;
+  }
+  100% {
+    transform: rotate(360deg);
+    stroke-dashoffset: 120;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutri-spinner__indicator {
+    animation-duration: 1400ms;
+  }
+}
