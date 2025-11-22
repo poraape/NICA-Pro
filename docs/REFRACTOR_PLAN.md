@@ -193,7 +193,7 @@
 - ✅ Atribuição centralizada de `trace_id` por requisição e respostas de erro padronizadas com rastreabilidade.
 - ✅ Exportar OTEL para collector e enriquecer métricas/alertas.
 - ⬜ Implementar repositórios Postgres/Redis com Alembic e pooling.
-- ⬜ Padronizar DTOs de API, contratos OpenAPI e cliente front gerado.
+- ✅ Padronizar DTOs de API, contratos OpenAPI e cliente front gerado.
 - ⬜ Introduzir validação Zod/ARIA no front, testes Vitest/Playwright e carregamento dinâmico de gráficos.
 - ⬜ Configurar CI/CD com gates (lint/test/build/scan) e Compose/K8s com healthchecks.
 - ⬜ Publicar ADRs, diagramas C4 e runbooks de incidentes/segurança.

@@ -2,6 +2,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const AUTH_TOKEN_ENV = process.env.NEXT_PUBLIC_API_TOKEN;
 const AUTH_STORAGE_KEY = "nica-pro-auth-token";
 
+export interface ApiMeta {
+  trace_id: string;
+  actor?: string | null;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  meta: ApiMeta;
+  message?: string | null;
+}
+
 function getAuthToken(): string | null {
   if (typeof window !== "undefined") {
     const stored = window.localStorage.getItem(AUTH_STORAGE_KEY);
@@ -26,7 +37,7 @@ function authHeaders() {
   return headers;
 }
 
-async function handleResponse<T>(response: Response): Promise<T> {
+async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   if (!response.ok) {
     let detail = "Erro ao comunicar com a API";
     try {
@@ -45,7 +56,21 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     throw new Error(detail);
   }
-  return response.json() as Promise<T>;
+  const payload = (await response.json()) as Partial<ApiResponse<T>> & {
+    detail?: string;
+    error?: string;
+  };
+
+  if (payload && "data" in payload && "meta" in payload && payload.data !== undefined) {
+    return payload as ApiResponse<T>;
+  }
+
+  const trace = (payload as { trace_id?: string }).trace_id ?? response.headers.get("x-trace-id") ?? "";
+  return {
+    data: payload as T,
+    meta: { trace_id: trace },
+    message: (payload as { message?: string }).message,
+  };
 }
 
 export interface ProfilePayload {
@@ -63,7 +88,7 @@ export interface DiaryPayload {
   entries: string[];
 }
 
-export interface NutritionPlanResponse {
+export interface NutritionPlanPayload {
   plan: {
     user: string;
     disclaimers: string[];
@@ -107,7 +132,12 @@ export interface NutritionPlanResponse {
   };
 }
 
-export interface DiaryResponse {
+export interface DiaryPayload {
+  user: string;
+  entries: string[];
+}
+
+export interface DiaryResult {
   log: {
     user: string;
     date: string;
@@ -186,7 +216,7 @@ export interface NavigationLink {
   href: string;
 }
 
-export interface DashboardResponse {
+export interface DashboardPayload {
   dashboard: {
     user: string;
     cards: DashboardCard[];
@@ -201,12 +231,16 @@ export interface DashboardResponse {
   };
 }
 
+export type NutritionPlanResponse = ApiResponse<NutritionPlanPayload>;
+export type DiaryResponse = ApiResponse<DiaryResult>;
+export type DashboardResponse = ApiResponse<DashboardPayload>;
+
 export function upsertPlan(payload: ProfilePayload) {
   return fetch(`${API_BASE}/api/v1/plan`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(payload)
-  }).then((res) => handleResponse<NutritionPlanResponse>(res));
+  }).then((res) => handleResponse<NutritionPlanPayload>(res));
 }
 
 export function syncDiary(payload: DiaryPayload) {
@@ -214,12 +248,12 @@ export function syncDiary(payload: DiaryPayload) {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(payload)
-  }).then((res) => handleResponse<DiaryResponse>(res));
+  }).then((res) => handleResponse<DiaryResult>(res));
 }
 
 export function fetchDashboard(user: string) {
   return fetch(`${API_BASE}/api/v1/dashboard/${user}`, { headers: authHeaders() }).then((res) =>
-    handleResponse<DashboardResponse>(res)
+    handleResponse<DashboardPayload>(res)
   );
 }
 

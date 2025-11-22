@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from core.logging import configure_logging
 from core.models import UserProfile
-from core.serialization import dashboard_to_json, log_to_json, plan_to_json
 from core.orchestrator import get_orchestrator
-from core.tracing import TRACE_HEADER, generate_trace_id
+from core.serialization import dashboard_to_json, log_to_json, plan_to_json
 from core.telemetry import record_counter, set_current_trace_id, start_span
+from core.tracing import TRACE_HEADER, generate_trace_id
+from .schemas import DashboardResponse, DiaryResponse, Envelope, PlanResponse, ResponseMeta
 from .security import AuthContext, require_auth
 
 router = APIRouter(prefix="/api/v1", tags=["nica-pro"])
@@ -70,12 +71,12 @@ class DiaryPayload(BaseModel):
         return self
 
 
-@router.post("/plan")
+@router.post("/plan", response_model=Envelope[PlanResponse])
 async def create_plan(
     payload: ProfilePayload,
     request: Request,
     auth: AuthContext = require_auth(["plan:write"]),
-) -> dict:
+) -> Envelope[PlanResponse]:
     trace_id = _resolve_trace_id(request)
     record_counter("api.calls", attributes={"route": "plan", "actor": auth.subject})
     profile = UserProfile(**payload.model_dump())
@@ -83,20 +84,18 @@ async def create_plan(
         "api.plan", {"trace_id": trace_id, "actor": auth.subject, "route": "plan"}
     ):
         plan, notes = await orchestrator.build_plan(profile, trace_id=trace_id)
-    return {
-        "plan": plan_to_json(plan),
-        "clinical_notes": notes,
-        "actor": auth.subject,
-        "trace_id": trace_id,
-    }
+    return Envelope(
+        data=PlanResponse(plan=plan_to_json(plan), clinical_notes=notes),
+        meta=ResponseMeta(trace_id=trace_id, actor=auth.subject),
+    )
 
 
-@router.post("/diary")
+@router.post("/diary", response_model=Envelope[DiaryResponse])
 async def diary(
     payload: DiaryPayload,
     request: Request,
     auth: AuthContext = require_auth(["diary:write"]),
-) -> dict:
+) -> Envelope[DiaryResponse]:
     trace_id = _resolve_trace_id(request)
     record_counter("api.calls", attributes={"route": "diary", "actor": auth.subject})
     if auth.subject != payload.user:
@@ -105,15 +104,18 @@ async def diary(
         "api.diary", {"trace_id": trace_id, "actor": auth.subject, "route": "diary"}
     ):
         log = await orchestrator.ingest_diary(payload.user, payload.entries, trace_id=trace_id)
-    return {"log": log_to_json(log), "actor": auth.subject, "trace_id": trace_id}
+    return Envelope(
+        data=DiaryResponse(log=log_to_json(log)),
+        meta=ResponseMeta(trace_id=trace_id, actor=auth.subject),
+    )
 
 
-@router.get("/dashboard/{user}")
+@router.get("/dashboard/{user}", response_model=Envelope[DashboardResponse])
 async def dashboard(
     user: str,
     request: Request,
     auth: AuthContext = require_auth(["dashboard:read"]),
-) -> dict:
+) -> Envelope[DashboardResponse]:
     trace_id = _resolve_trace_id(request)
     record_counter(
         "api.calls", attributes={"route": "dashboard", "actor": auth.subject}
@@ -128,4 +130,7 @@ async def dashboard(
             board = await orchestrator.refresh_dashboard(user, trace_id=trace_id)
     except ValueError as exc:  # pragma: no cover - runtime
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"dashboard": dashboard_to_json(board), "actor": auth.subject, "trace_id": trace_id}
+    return Envelope(
+        data=DashboardResponse(dashboard=dashboard_to_json(board)),
+        meta=ResponseMeta(trace_id=trace_id, actor=auth.subject),
+    )

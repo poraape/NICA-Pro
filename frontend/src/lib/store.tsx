@@ -164,8 +164,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const dashboardResponse = await fetchDashboard(state.profile.name);
       setState((prev) => ({
         ...prev,
-        plan: planResponse.plan,
-        dashboard: dashboardResponse.dashboard,
+        plan: planResponse.data.plan,
+        dashboard: dashboardResponse.data.dashboard,
         loading: false
       }));
       pushToast({ title: "Plano recalibrado", description: "Dados combinados com a última versão do dashboard.", tone: "success" });

@@ -66,7 +66,8 @@ async def test_api_endpoints_require_auth_and_emit_trace(monkeypatch: pytest.Mon
         request_plan,
         AuthContext(subject="api-user", scopes=["plan:write"], issued_at=datetime.now(timezone.utc)),
     )
-    assert plan_resp["trace_id"] == trace_id
+    assert plan_resp.meta.trace_id == trace_id
+    assert plan_resp.meta.actor == "api-user"
 
     diary_payload = DiaryPayload(user="api-user", entries=["200g frango grelhado", "1 xicara arroz integral"])
     request_diary = Request(
@@ -86,7 +87,8 @@ async def test_api_endpoints_require_auth_and_emit_trace(monkeypatch: pytest.Mon
         request_diary,
         AuthContext(subject="api-user", scopes=["diary:write"], issued_at=datetime.now(timezone.utc)),
     )
-    assert diary_resp["trace_id"] == trace_id
+    assert diary_resp.meta.trace_id == trace_id
+    assert diary_resp.data.log["user"] == "api-user"
 
     request_dashboard = Request(
         {
@@ -105,8 +107,8 @@ async def test_api_endpoints_require_auth_and_emit_trace(monkeypatch: pytest.Mon
         request_dashboard,
         AuthContext(subject="api-user", scopes=["dashboard:read"], issued_at=datetime.now(timezone.utc)),
     )
-    assert dashboard_resp["trace_id"] == trace_id
-    assert dashboard_resp["dashboard"]["user"] == "api-user"
+    assert dashboard_resp.meta.trace_id == trace_id
+    assert dashboard_resp.data.dashboard["user"] == "api-user"
 
 
 @pytest.mark.anyio
