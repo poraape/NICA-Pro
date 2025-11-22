@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import Link from "next/link";
 import { useAppState } from "@/lib/store";
 import type { ProfilePayload } from "@/lib/api";
 import { RadialRing } from "@/components/dashboard/radial-ring";
-import { ChartRenderer } from "@/components/dashboard/chart-renderer";
 import { InsightCard } from "@/components/dashboard/insight-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +14,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import type { WeekTrendPoint } from "@/components/dashboard/week-trend";
 
 const statusColors: Record<string, string> = {
   above: "#ff375f",
   target: "#32d74b",
   below: "#ffd60a"
 };
+
+const ChartRenderer = dynamic(
+  () => import("@/components/dashboard/chart-renderer").then((mod) => mod.ChartRenderer),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-label="Carregando visualização"
+        className="h-64 w-full rounded-3xl border border-white/30 bg-white/50 shadow-inner shadow-white/20 backdrop-blur dark:border-white/10 dark:bg-slate-900/60"
+      />
+    )
+  }
+);
+
+const WeekTrendChart = dynamic(
+  () => import("@/components/dashboard/week-trend").then((mod) => mod.WeekTrendChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-label="Carregando tendência semanal"
+        className="h-64 w-full rounded-3xl border border-white/30 bg-white/50 shadow-inner shadow-white/20 backdrop-blur dark:border-white/10 dark:bg-slate-900/60"
+      />
+    )
+  }
+);
 
 function DashboardSkeleton() {
   return (
@@ -80,7 +106,7 @@ export default function DashboardPage() {
   const micronutrients = dashboard?.today?.micronutrients ?? [];
   const todayInsights = dashboard?.today?.insights ?? [];
   const weekHighlights = dashboard?.week?.highlights ?? [];
-  const weekData = useMemo(() => {
+  const weekData: WeekTrendPoint[] = useMemo(() => {
     if (!dashboard?.week) return [];
     return dashboard.week.bars.map((bar, index) => ({
       ...bar,
@@ -334,29 +360,15 @@ export default function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {weekData.length > 0 && (
               <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60 lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Semana</CardTitle>
-                  <CardDescription>Barras diárias + tendência calórica conectada ao Trend-Agent.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={weekData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                        <CartesianGrid strokeDasharray="4 4" opacity={0.3} />
-                        <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8" }} />
-                        <Tooltip cursor={{ opacity: 0.1 }} />
-                        <Bar dataKey="calories" barSize={24} radius={[10, 10, 10, 10]}>
-                          {weekData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={statusColors[entry.status]} />
-                          ))}
-                        </Bar>
-                        <Line type="monotone" dataKey="trend" stroke="#0a84ff" strokeWidth={3} dot={false} />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+              <CardHeader>
+                <CardTitle>Semana</CardTitle>
+                <CardDescription>Barras diárias + tendência calórica conectada ao Trend-Agent.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WeekTrendChart data={weekData} statusColors={statusColors} />
+              </CardContent>
+            </Card>
+          )}
 
             <Card className="border border-white/20 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:bg-slate-900/60">
               <CardHeader>

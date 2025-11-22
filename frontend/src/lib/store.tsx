@@ -223,6 +223,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pushToast,
       hydrateFromStorage
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state]
   );
 

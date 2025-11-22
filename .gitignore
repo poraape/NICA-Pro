@@ -3,5 +3,6 @@ __pycache__/
 .env
 .venv/
 frontend/node_modules/
+.next/
 backend/.venv/
 .DS_Store

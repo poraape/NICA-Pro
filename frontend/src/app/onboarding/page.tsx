@@ -47,7 +47,7 @@ type ParsedForm = {
   protein_target: number;
 };
 
-const validateForm = (form: FormState): { errors: Record<string, string>; data?: ParsedForm } => {
+export const validateForm = (form: FormState): { errors: Record<string, string>; data?: ParsedForm } => {
   const errors: Record<string, string> = {};
 
   const numeric = (value: string, field: string): number | null => {

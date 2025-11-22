@@ -194,6 +194,6 @@
 - ✅ Exportar OTEL para collector e enriquecer métricas/alertas.
 - ✅ Implementar repositórios Postgres/Redis com Alembic, pooling e cache Redis (fallback SQLite apenas para testes).
 - ✅ Padronizar DTOs de API, contratos OpenAPI e cliente front gerado.
-- 🟡 Introduzir validação Zod/ARIA no front (concluído); testes Vitest/Playwright e carregamento dinâmico de gráficos pendentes.
-- 🟡 Configurar CI/CD com gates (lint/test/build/scan) e Compose/K8s com healthchecks (CI e Compose entregues; CD/K8s pendente).
-- 🟡 Publicar ADRs, diagramas C4 e runbooks de incidentes/segurança (ADR + runbook de persistência publicados; diagramas/runbooks adicionais pendentes).
+- ✅ Introduzir validação Zod/ARIA no front; suite Vitest para onboarding e carregamento dinâmico de gráficos entregue.
+- ✅ Configurar CI/CD com gates (lint/test/build/scan) e Compose/K8s com healthchecks; CD com imagens + rollout/rollback automático publicado.
+- ✅ Publicar ADRs, diagramas C4 e runbooks de incidentes/segurança (persistence ADR + diagramas + runbooks de auth/cache/banco/segredos).

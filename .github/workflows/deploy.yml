@@ -1,5 +1,10 @@
 name: Deploy
 
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  BACKEND_IMAGE: ${{ env.REGISTRY }}/nica-backend:${{ github.sha }}
+  FRONTEND_IMAGE: ${{ env.REGISTRY }}/nica-frontend:${{ github.sha }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +19,7 @@ on:
           - prod
 
 jobs:
-  migrate_seed_health:
+  deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
@@ -54,4 +59,52 @@ jobs:
           python -m src.database.cli healthcheck --url "$DATABASE_URL"
           if [ -n "$HEALTHCHECK_URL" ]; then
             curl -f "$HEALTHCHECK_URL"
+          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.BACKEND_IMAGE }}
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/frontend.Dockerfile
+          push: true
+          tags: ${{ env.FRONTEND_IMAGE }}
+      - name: Configure kubectl
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG" > ~/.kube/config
+      - name: Apply manifests and update images
+        run: |
+          kubectl apply -f infra/k8s
+          kubectl set image deployment/nica-backend backend=${{ env.BACKEND_IMAGE }} --record
+          kubectl set image deployment/nica-frontend frontend=${{ env.FRONTEND_IMAGE }} --record
+      - name: Rollout status with rollback
+        run: |
+          set +e
+          kubectl rollout status deployment/nica-backend --timeout=180s
+          backend_status=$?
+          kubectl rollout status deployment/nica-frontend --timeout=180s
+          frontend_status=$?
+          if [ $backend_status -ne 0 ]; then
+            kubectl rollout undo deployment/nica-backend
+            exit $backend_status
+          fi
+          if [ $frontend_status -ne 0 ]; then
+            kubectl rollout undo deployment/nica-frontend
+            exit $frontend_status
           fi

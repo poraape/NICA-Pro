@@ -6,6 +6,7 @@ Este guia descreve como automatizar deploys e operar os ambientes **dev/stage/pr
 - A pipeline principal (`.github/workflows/ci.yml`) executa lint, formatação, type-check, migrações Alembic+seeds e testes. Somente `main` pode receber merges após sucesso do pipeline.
 - O job `security` roda **pip-audit**, **bandit** e `npm audit` (produção, severidade alta) para blocar dependências vulneráveis.
 - Falhas em qualquer stage impedem merges na branch principal (gate obrigatório).
+- O workflow `deploy.yml` (gatilho manual) agora inclui build/push das imagens backend e frontend, aplica manifests Kubernetes e valida rollout com rollback automático em caso de falha.
 
 ## Deploy e automação de banco
 - Use o workflow `deploy.yml` (gatilho manual) para promover código por ambiente (`dev`, `stage`, `prod`). Ele aplica migrações + seeds via `python -m src.database.cli migrate-seed --url "$DATABASE_URL"` e valida readiness com `python -m src.database.cli healthcheck`.
@@ -24,6 +25,11 @@ Este guia descreve como automatizar deploys e operar os ambientes **dev/stage/pr
 - API: `GET /healthcheck` deve responder `{status:"ok"}` e expor cabeçalho `x-trace-id` quando presente.
 - Banco: `python -m src.database.cli healthcheck --url "$DATABASE_URL"` valida conectividade e presence dos seeds.
 - Fila/event bus: monitorar métricas `event_bus.dlq` e `pipeline.retry.count`; valores >0 indicam reprocessamento necessário.
+
+## Kubernetes
+- Manifests em `infra/k8s` cobrem Deployments + HPA, Services e probes de liveness/readiness.
+- Secrets necessários: `auth_secret`, `database_url`, `redis_url`, `otel_exporter_otlp_endpoint`, `api_base_url` (frontend).
+- Rollout: `kubectl rollout status deployment/nica-backend` e `kubectl rollout status deployment/nica-frontend` (rollback automático via workflow se falhar).
 
 ## Observabilidade e auditoria
 - Todos os fluxos propagam `trace_id` (API → orquestrador → agentes). Configure exporters OTLP nas VMs/containers dos ambientes para coletar spans e métricas.
