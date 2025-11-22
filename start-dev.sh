@@ -7,14 +7,18 @@ VENV_DIR="$ROOT_DIR/.venv"
 POSTGRES_DATA_DIR="${POSTGRES_DATA_DIR:-$HOME/.nica-pro/postgres}"
 POSTGRES_CONTAINER="nica-pro-postgres-dev"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+REDIS_CONTAINER="nica-pro-redis-dev"
+REDIS_PORT="${REDIS_PORT:-6379}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 USE_SUPABASE="${USE_SUPABASE:-false}"
 USE_SQLITE="${USE_SQLITE:-false}"
+USE_REDIS="${USE_REDIS:-true}"
 DATABASE_URL="${DATABASE_URL:-postgresql://nica:nica@localhost:${POSTGRES_PORT}/nica}"
+REDIS_URL="${REDIS_URL:-redis://localhost:${REDIS_PORT}/0}"
 NEXT_PUBLIC_API_URL_DEFAULT="http://localhost:${BACKEND_PORT}"
 NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_URL_DEFAULT}}"
-AUTH_SECRET="${AUTH_SECRET:-dev-insecure-secret}"
+AUTH_SECRET="${AUTH_SECRET:-}"
 RATE_LIMIT="${RATE_LIMIT:-30}"
 
 mkdir -p "$LOG_DIR"
@@ -22,6 +26,11 @@ mkdir -p "$LOG_DIR"
 log() {
   echo "[$(date -Iseconds)] $*"
 }
+
+if [[ -z "$AUTH_SECRET" ]]; then
+  log "Erro: defina AUTH_SECRET com uma chave aleatória de pelo menos 16 caracteres (ex.: openssl rand -hex 32)"
+  exit 1
+fi
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -37,6 +46,11 @@ cleanup() {
   fi
   if [[ -n "${FRONTEND_PID:-}" ]]; then
     kill "$FRONTEND_PID" 2>/dev/null || true
+  fi
+  if [[ "${USE_REDIS}" == "true" ]]; then
+    if docker ps -a --format '{{.Names}}' | grep -Eq "^${REDIS_CONTAINER}$"; then
+      docker stop "$REDIS_CONTAINER" >/dev/null || true
+    fi
   fi
   if [[ "${USE_SUPABASE}" == "false" && "${USE_SQLITE}" == "false" ]]; then
     if docker ps -a --format '{{.Names}}' | grep -Eq "^${POSTGRES_CONTAINER}$"; then
@@ -125,6 +139,24 @@ start_postgres() {
   wait_for_port localhost "$POSTGRES_PORT" "Postgres"
 }
 
+start_redis() {
+  if [[ "${USE_REDIS}" != "true" ]]; then
+    log "Redis desabilitado via USE_REDIS=false"
+    return
+  fi
+  require_cmd docker
+  if docker ps --format '{{.Names}}' | grep -Eq "^${REDIS_CONTAINER}$"; then
+    log "Redis dev já está em execução"
+  else
+    log "Subindo Redis dev container (${REDIS_CONTAINER})"
+    docker run -d --rm \
+      --name "$REDIS_CONTAINER" \
+      -p "${REDIS_PORT}:6379" \
+      redis:7-alpine >/dev/null
+  fi
+  wait_for_port localhost "$REDIS_PORT" "Redis"
+}
+
 start_supabase() {
   require_cmd supabase
   if ! supabase status >/dev/null 2>&1; then
@@ -148,6 +180,7 @@ start_backend() {
   log "Iniciando backend FastAPI na porta ${BACKEND_PORT}"
   (cd "$ROOT_DIR/backend" && \
     DATABASE_URL="$DATABASE_URL" \
+    REDIS_URL="$REDIS_URL" \
     AUTH_SECRET="$AUTH_SECRET" \
     RATE_LIMIT="$RATE_LIMIT" \
     PYTHONPATH="$ROOT_DIR/backend/src" \
@@ -186,6 +219,8 @@ main() {
   else
     start_postgres
   fi
+
+  start_redis
 
   ensure_python
   ensure_node

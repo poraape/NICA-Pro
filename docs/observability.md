@@ -3,10 +3,16 @@
 Este serviço publica **logs estruturados**, **métricas** e **traces** usando OpenTelemetry:
 
 - **Traces**: spans são abertos nos estágios `plan`, `calc`, `trend`, `coach` e `dashboard`, e propagam o `trace_id` recebido via API ou gerado no backend.
-- **Métricas**: contadores expõem atividade de agentes (`agent.invocations`), eventos da orquestração (`orchestrator.events`) e fila (`event_bus.*`). Os exports usam `ConsoleSpanExporter` e `ConsoleMetricExporter` por padrão para inspeção local.
+- **Métricas**: contadores expõem atividade de agentes (`agent.invocations`), eventos da orquestração (`orchestrator.events`) e fila (`event_bus.*`). Os exports usam `ConsoleSpanExporter`/`ConsoleMetricExporter` por padrão e alternam para OTLP gRPC ou HTTP quando habilitado.
 - **Logs**: `trace_id` é injetado em todos os registros via `TraceIdFilter`, permitindo correlação rápida entre chamadas de API, eventos e spans.
 
-Para instrumentar ferramentas externas, defina `OTEL_SERVICE_NAME` e configure exporters compatíveis na inicialização (ex.: OTLP/HTTP). O cabeçalho `x-trace-id` permite correlacionar clientes e agentes.
+Para enviar telemetria para um collector OTEL, defina:
+
+- `OTEL_EXPORTER_OTLP_ENABLED=true` ou configure `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`.
+- `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` (padrão) ou `grpc` para escolher o protocolo.
+- `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION` e `DEPLOY_ENV` para enriquecer os atributos da `Resource`.
+
+Sem variáveis setadas, o backend permanece seguro usando apenas exporters de console. O cabeçalho `x-trace-id` permite correlacionar clientes e agentes.
 
 ## MAS (multiagente) e alertas clínicos
 - Cada estágio do pipeline multiagente (`calc`, `trend`, `coach`, `dashboard`) abre spans filhos do `trace_id` da API, facilitando identificar em qual agente um alerta foi gerado.

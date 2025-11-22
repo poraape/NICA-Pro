@@ -12,6 +12,7 @@ from agents.nlp_agent import NLPAgent
 from agents.planner import PlannerAgent
 from agents.trend import TrendAgent
 from agents.ui import UIAgent
+from core.cache import DashboardCache, NoopDashboardCache, init_dashboard_cache
 from core.constants import PAYLOAD_VERSION
 from core.models import (
     DailyLog,
@@ -74,6 +75,7 @@ class Orchestrator:
         repository: Repository | None = None,
         realtime: RealtimePublisher | None = None,
         event_bus: AsyncEventBus | None = None,
+        cache: DashboardCache | None = None,
     ) -> None:
         self.logger = logger
         self.repository = repository or get_repository()
@@ -85,6 +87,7 @@ class Orchestrator:
         self.ui = UIAgent()
         self.realtime = realtime or RealtimePublisher(logger)
         self.event_bus = event_bus or AsyncEventBus(logger)
+        self.cache = cache or NoopDashboardCache()
         self.tracer = start_span  # alias to reuse context manager
         self._register_pipeline_handlers()
 
@@ -277,6 +280,7 @@ class Orchestrator:
         plan = plan_from_json(plan_result["plan"])
         self.repository.upsert_profile(profile)
         self.repository.save_plan(plan)
+        self.cache.invalidate(profile.name)
         await self._broadcast(profile.name, "plan.updated", plan_result["plan"])
         self._log_event("plan.generated", user=profile.name, days=len(plan.days), trace_id=trace_id)
         return plan, notes
@@ -289,6 +293,7 @@ class Orchestrator:
         )
         log = log_from_json(log_result["log"])
         self.repository.append_log(log)
+        self.cache.invalidate(user)
         await self._broadcast(user, "diary.processed", log_result["log"])
         self._log_event("diary.ingested", user=user, meals=len(log.meals), trace_id=trace_id)
         await self._trigger_pipeline(user=user, trace_id=trace_id)
@@ -297,11 +302,18 @@ class Orchestrator:
     async def refresh_dashboard(self, user: str, trace_id: str | None = None) -> DashboardState:
         trace_id = trace_id or generate_trace_id()
         set_current_trace_id(trace_id)
+        cached = self.cache.get_dashboard(user)
+        if cached:
+            record_counter("cache.hits", attributes={"resource": "dashboard"})
+            return cached
+        record_counter("cache.misses", attributes={"resource": "dashboard"})
         state = self._build_pipeline_state(user)
         state = await self._stage_calc(state, trace_id)
         state = await self._stage_trends(state, trace_id)
         state = await self._stage_coach(state, trace_id)
-        return await self._stage_dashboard(state, trace_id)
+        board = await self._stage_dashboard(state, trace_id)
+        self.cache.set_dashboard(user, board)
+        return board
 
     async def full_cycle(
         self, profile: UserProfile, diary: list[str], trace_id: str | None = None
@@ -372,5 +384,5 @@ _orchestrator: Orchestrator | None = None
 def get_orchestrator(logger: Logger) -> Orchestrator:
     global _orchestrator
     if not _orchestrator:
-        _orchestrator = Orchestrator(logger)
+        _orchestrator = Orchestrator(logger, cache=init_dashboard_cache(logger))
     return _orchestrator
